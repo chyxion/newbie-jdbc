@@ -10,7 +10,7 @@
 * org.json
 
 ## 初始化工作
-* 配置数据库连接，用户名，密码，可以通过如下代码
+    // 配置数据库连接，用户名，密码，可以通过如下代码
     // 数据库方言，目前支持，Oracle，MySQL，SQLServer
     ConnectionManager.DIALECT = "oralce";
     // JDBC连接驱动
@@ -29,27 +29,27 @@
 * List<Map<String, Object>
 * Object
 
-* 查询返回String
+    // 查询返回String
     // 返回值为： "Shaun Chyxion"，系列方法有，findInt, findDouble, findObj
     BaseDAO.findStr("select name from demo_users where id = ?", 
         // 传入参数可选，可多个
         "110101");
 
-* 查询返回JSONObject、Map<String, Object>
+    // 查询返回JSONObject、Map<String, Object>
     // 返回值为： {"id": "110101", "name": "Shaun Chyxion", "gender": "M"}
     BaseDAO.findJSONObject("select id, name, gender from demo_users where id = ?", "110101");
 
     // 返回值为Map<String, Object>: {"id": "110101", "name": "Shaun Chyxion", "gender": "M"}
     BaseDAO.findMap("select id, name, gender from demo_users where id = ?", "110101");
 
-* 查询返回JSONArray, List<Map<String, Object>>
+    // 查询返回JSONArray, List<Map<String, Object>>
     // 返回值为： [{"id": "110101", "name": "Shaun Chyxion", "gender": "M"}]
     BaseDAO.findJSONArray("select id, name, gender from demo_users where id = ?", "110101");
 
     // 返回值为ListMap<String, Object>>: [{"id": "110101", "name": "Shaun Chyxion", "gender": "M"}]
     BaseDAO.findMapList("select id, name, gender from demo_users where id = ?", "110101");
 
-* 分页查询
+    // 分页查询
     // 返回结果为： [{...}, {...}, {...}]
     BaseDAO.findJSONArrayPage(
         "id", // 排序列
@@ -73,7 +73,7 @@
 * Map<String, Object>
 * List<Map<String, Object>
 
-* 插入JSONObject，Map<String, Object>
+    // 插入JSONObject，Map<String, Object>
     // 创建用户JSONObject
     JSONObject joUser = 
         new JSONObject()
@@ -103,7 +103,7 @@
 * List<Object>
 * Object ...
 
-* PreparedStatement 扩展样例 
+    // PreparedStatement 扩展样例 
     // Object[] 作为查询参数
     // 请注意这里是1个 ? 并且有括号()
     BaseDAO.findJSONArray("select id, name, gender from demo_users where id in (?)", 
@@ -137,7 +137,7 @@
     BaseDAO.update("delete from demo_users where id in (?)", new String[]{"110102", "110103"});
 
 ## 共享连接
-* 同一个业务，无需启动事务时候可以使用共享连接
+    // 同一个业务，无需启动事务时候可以使用共享连接
     // 启动共享连接
     JSONObject joResult = BaseDAO.execute(new ConnectionOperator() {
         @Override
@@ -156,7 +156,7 @@
     });
 
 ## 启动事务
-* 同一个连接，启动事务，异常回滚
+    // 同一个连接，启动事务，异常回滚
     // 启动事务
     JSONObject joResult = BaseDAO.executeTransaction(new ConnectionOperator() {
         @Override
