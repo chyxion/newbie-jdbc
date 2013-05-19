@@ -9,6 +9,7 @@
 * org.json
 
 ## 初始化工作
+
     // 配置数据库连接，用户名，密码，可以通过如下代码
     // 数据库方言，目前支持，Oracle，MySQL，SQLServer
     ConnectionManager.DIALECT = "oralce";
@@ -22,11 +23,6 @@
     BaseDAO.DEFAULT_CHAR_LOWER_CASE = true;
 
 ## 查询结果数据类型
-* JSONObject
-* JSONArray
-* Map
-* List
-* Object
 
     // 查询返回String
     // 返回值为： "Shaun Chyxion"，系列方法有，findInt, findDouble, findObj
@@ -67,10 +63,6 @@
         "select id, name, gender from demo_users");
 
 ## 插入，更新数据类型
-* JSONObject
-* JSONArray
-* Map
-* List
 
     // 插入JSONObject，Map<String, Object>
     // 创建用户JSONObject
@@ -96,11 +88,6 @@
     BaseDAO.update("delete from demo_users where id = ?", "110103");
 
 ## Prepared Statement 参数支持
-* JSONObject
-* JSONArray
-* Object[]
-* List
-* Object ...
 
     // PreparedStatement 扩展样例 
     // Object[] 作为查询参数
@@ -136,6 +123,7 @@
     BaseDAO.update("delete from demo_users where id in (?)", new String[]{"110102", "110103"});
 
 ## 共享连接
+
     // 同一个业务，无需启动事务时候可以使用共享连接
     // 启动共享连接
     JSONObject joResult = BaseDAO.execute(new ConnectionOperator() {
@@ -154,7 +142,8 @@
         }
     });
 
-## 启动事务
+## 事务支持
+
     // 同一个连接，启动事务，异常回滚
     // 启动事务
     JSONObject joResult = BaseDAO.executeTransaction(new ConnectionOperator() {
@@ -182,6 +171,7 @@
     });
 
 ## 操作ResultSet
+
     // 执行查询，操作ResultSet
     JSONArray jaResult = 
         BaseDAO.query(new ResultSetOperator() {
@@ -199,6 +189,7 @@
 
 License
 ==================================
+
 这是本人工作中积累的一些东西，如果能对这个世界有点作用，就拿去使用吧！
 关于许可证，没有许可证。
-有什么需要支持或者帮助或者介绍工作机会请联系chyxion@163.com
+有什么需要支持或者帮助或者介绍工作机会请联系 chyxion@163.com
