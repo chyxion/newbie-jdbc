@@ -1,5 +1,4 @@
 # Base DAO
-======================
 基础Java JDBC数据库访问，查询、插入，更新数据类型支持，Map，JSONObject。
 目前支持数据库方言有Oracle，MySQL，以及SQLServer，简单对PreparedStatement进行封装解析，支持不定参数，集合参数传入。
 
@@ -25,8 +24,8 @@
 ## 查询结果数据类型
 * JSONObject
 * JSONArray
-* Map<String, Object>
-* List<Map<String, Object>
+* Map
+* List
 * Object
 
     // 查询返回String
@@ -70,8 +69,8 @@
 ## 插入，更新数据类型
 * JSONObject
 * JSONArray
-* Map<String, Object>
-* List<Map<String, Object>
+* Map
+* List
 
     // 插入JSONObject，Map<String, Object>
     // 创建用户JSONObject
@@ -100,7 +99,7 @@
 * JSONObject
 * JSONArray
 * Object[]
-* List<Object>
+* List
 * Object ...
 
     // PreparedStatement 扩展样例 
