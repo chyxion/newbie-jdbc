@@ -1,6 +1,11 @@
 # Base DAO
-基础Java JDBC数据库访问，查询、插入，更新数据类型支持，Map，JSONObject。
-目前支持数据库方言有Oracle，MySQL，以及SQLServer，简单对PreparedStatement进行封装解析，支持不定参数，集合参数传入。
+* 基础Java JDBC数据库访问，查询、插入
+* 更新数据类型支持，Map，JSONObject
+* 目前支持数据库方言有Oracle，MySQL，以及SQLServer，
+* PreparedStatement封装解析，支持不定参数，集合参数传入
+* 数据库连接操作支持
+* ResultSet结果集操作支持
+* 事务支持
 
 ## 依赖包
 * commons-lang
@@ -190,6 +195,6 @@
 License
 ==================================
 
--这是本人工作中积累的一些东西，如果能对这个世界有点作用，就拿去使用吧！
--关于许可证，没有许可证。
--有什么需要支持或者帮助或者介绍工作机会请联系 chyxion@163.com
+* 这是本人工作中积累的一些东西，如果能对这个世界有点作用，就拿去使用吧！
+* 关于许可证，没有许可证。
+* 有什么需要支持或者帮助或者介绍工作机会请联系 chyxion@163.com
