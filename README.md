@@ -20,6 +20,8 @@
     ConnectionManager.DIALECT = "oralce";
     // JDBC连接驱动
     ConnectionManager.DRIVER = "oracle.jdbc.OracleDriver";
+    // 连接URL
+    ConnectionManager.URL = "jdbc:oracle:thin:@chyxion-pad:1521:oracle";
     // 连接用户名
     ConnectionManager.USER_NAME = "chyxion";
     // 连接密码，你的密码
@@ -78,6 +80,7 @@
             .put("gender", "M");
     // 插入到数据库
     BaseDAO.insert("demo_users", joUser);
+
     // 创建用户Map
     Map<String, Object> mapUser = new HashMap<String, Object>();
     mapUser.put("id", "110103");
@@ -85,12 +88,23 @@
     mapUser.put("gender", "F");
     // 插入数据库
     BaseDAO.insert("demo_users", mapUser);
+
     // 可以批量插入，JSONArray，List<Map<String, Object>>，代码类似
     // 略。。。
+
     // 更新数据
     BaseDAO.update("update demo_users set name = ? where id = ?", "Update Name", "110103");
+
     // 删除数据
     BaseDAO.update("delete from demo_users where id = ?", "110103");
+    
+    // JSONObject 格式更新
+    JSONObject joUpdate = 
+                new JSONObject()
+                .put("name", "Update Name By JSONObject");
+    JSONObject joWhere = new JSONObject().put("id", "110104");
+    // 执行更新，生成结果为 update demo_users set name = ? where id = ?，"Update Name By JSONObject", "110104"
+    BaseDAO.update("demo_users", joUpdate, joWhere);
 
 ## Prepared Statement 参数支持
 
@@ -196,5 +210,5 @@ License
 ==================================
 
 * 这是本人工作中积累的一些东西，如果能对这个世界有点作用，就拿去使用吧！
-* 关于许可证，没有许可证。
+* 许可证， GPL2 
 * 有什么需要支持或者帮助或者介绍工作机会请联系 chyxion@163.com
