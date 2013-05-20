@@ -48,6 +48,16 @@ public class BaseDAO {
 	public static void setDbTrait(IDbTrait dbt) {
 		dbTrait = dbt;
 	}
+	/**
+	 * 事件
+	 */
+	private static IEvent event;
+	public static void setEvent(IEvent e) {
+		event = e;
+	}
+	public static IEvent getEvent() {
+		return event;
+	}
 	private static Logger logger = Logger.getLogger(BaseDAO.class);
 	/**
 	 * SQL batch size
@@ -1202,7 +1212,7 @@ public class BaseDAO {
 		public DAOCore(Connection dbConnection) {
 			this.dbConnection = dbConnection;
 		}
-		public DAOCore() { }
+		public DAOCore() {}
 		/**
 		 * 查找一个String
 		 * 
@@ -1213,8 +1223,7 @@ public class BaseDAO {
 		 * @return
 		 * @
 		 */
-		public String findStr(String strSQL, Object... values)
-				 {
+		public String findStr(String strSQL, Object... values) {
 			return findObj(strSQL, values);
 		}
 
@@ -1288,7 +1297,15 @@ public class BaseDAO {
 				rs = statement.executeQuery();
 				rso.dbConnection = dbConnection;
 				rso.resultSet = rs;
+				// 前置事件
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeQuery(dbConnection);
+				}
 				rso.run();
+				// 前置事件
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterQuery(dbConnection);
+				}
 				return (T) rso.result;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -1301,8 +1318,15 @@ public class BaseDAO {
 			Statement statement = null;
 			try {
 				logger.debug("execute[" + strSQL + "]");
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeExecute(dbConnection);
+				}
 				statement = dbConnection.createStatement();
-				return statement.execute(strSQL);
+				boolean bRtn = statement.execute(strSQL);
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterExecute(dbConnection);
+				}
+				return bRtn;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1317,6 +1341,9 @@ public class BaseDAO {
 		public void executeBatch(List<String> listSQLs)  {
 			Statement statement = null;
 			try {
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeExecuteBatch(dbConnection);
+				}
 				statement = dbConnection.createStatement();
 				int i = 0;
 				for (String sql : listSQLs) {
@@ -1327,6 +1354,9 @@ public class BaseDAO {
 					}
 				}
 				statement.executeBatch();
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterExecuteBatch(dbConnection);
+				}
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1362,6 +1392,9 @@ public class BaseDAO {
 			PreparedStatement preparedStatement = null;
 			try {
 				logger.debug("execute batch[" + strSQL + "]");
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeExecute(dbConnection);
+				}
 				preparedStatement = dbConnection.prepareStatement(strSQL);
 				for (int i = 0; i < jaValues.length(); ++i) {
 					setValues(preparedStatement, jaValues
@@ -1373,6 +1406,9 @@ public class BaseDAO {
 					}
 				}
 				preparedStatement.executeBatch();
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterExecute(dbConnection);
+				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1418,7 +1454,14 @@ public class BaseDAO {
 				try {
 					statement = setValues(dbConnection
 							.prepareStatement(insertSQL), values);
-					return statement.executeUpdate() > 0;
+					if (BaseDAO.event != null) {
+						BaseDAO.event.beforeInsert(dbConnection);
+					}
+					boolean bRtn = statement.executeUpdate() > 0;
+					if (BaseDAO.event != null) {
+						BaseDAO.event.afterInsert(dbConnection);
+					}
+					return bRtn;
 				} catch (SQLException e) {
 					throw new RuntimeException(e);
 				}
@@ -1429,8 +1472,14 @@ public class BaseDAO {
 
 		public void insert(String table, JSONArray jaModels)  {
 			try {
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeInsert(dbConnection);
+				}
 				for (int i = 0; i < jaModels.length(); ++i) {
 					insert(table, jaModels.getJSONObject(i));
+				}
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterInsert(dbConnection);
 				}
 			} catch (JSONException e) {
 				throw new RuntimeException(e);
@@ -1454,9 +1503,16 @@ public class BaseDAO {
 		public int update(String table, JSONObject joModel, JSONObject where)  {
 			PreparedStatement statement = null;
 			try {
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeUpdate(dbConnection);
+				}
 				statement = genUpdateStatement(dbConnection, table, joModel,
 						where);
-				return statement.executeUpdate();
+				int count = statement.executeUpdate();
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterUpdate(dbConnection);
+				}
+				return count;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1479,8 +1535,15 @@ public class BaseDAO {
 		public int update(final String strSQL, final Object... values)  {
 			PreparedStatement statement = null;
 			try {
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeUpdate(dbConnection);
+				}
 				statement = prepareStatement(dbConnection, strSQL, values);
-				return statement.executeUpdate();
+				int count = statement.executeUpdate();
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterUpdate(dbConnection);
+				}
+				return count;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1514,9 +1577,16 @@ public class BaseDAO {
 			PreparedStatement statement = null;
 			ResultSet resultSet = null;
 			try {
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeQuery(dbConnection);
+				}
 				statement = prepareStatement(dbConnection, strSQL, values);
 				resultSet = statement.executeQuery();
-				return getMapList(resultSet, lowerCase);
+				List<Map<String, Object>> mapList = getMapList(resultSet, lowerCase);
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterQuery(dbConnection);
+				}
+				return mapList;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1531,11 +1601,18 @@ public class BaseDAO {
 			PreparedStatement statement = null;
 			ResultSet resultSet = null;
 			try {
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeQuery(dbConnection);
+				}
 				statement = prepareStatement(dbConnection, dbTrait
 						.pageStatement(orderCol, direction, start, limit,
 								strSQL, values));
 				resultSet = statement.executeQuery();
-				return getMapList(resultSet, lowerCase);
+				List<Map<String, Object>> mapList = getMapList(resultSet, lowerCase);
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterQuery(dbConnection);
+				}
+				return mapList;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1604,10 +1681,16 @@ public class BaseDAO {
 			ResultSet resultSet = null;
 			Map<String, Object> mapRtn = null;
 			try {
+				if (BaseDAO.event != null) {
+					BaseDAO.event.beforeQuery(dbConnection);
+				}
 				statement = prepareStatement(dbConnection, strSQL, values);
 				resultSet = statement.executeQuery();
 				if (resultSet.next())
 					mapRtn = getMap(resultSet, lowerCase);
+				if (BaseDAO.event != null) {
+					BaseDAO.event.afterQuery(dbConnection);
+				}
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
