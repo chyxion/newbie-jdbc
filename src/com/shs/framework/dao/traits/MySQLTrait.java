@@ -10,12 +10,12 @@ import org.json.JSONObject;
 
 public class MySQLTrait extends IDbTrait {
 	@Override
-	public QueryStatement pageStatement(String orderCol, String direction,
+	public StatementWrapper pageStatement(String orderCol, String direction,
 			int start, int limit, String strSQL, Object... values) {
 		strSQL += " order by `" + orderCol + "` " + direction + " limit " + start;
 		if (limit > 0) 
 			strSQL += ", " + limit;
-		return new QueryStatement(strSQL, values);
+		return new StatementWrapper(strSQL, values);
 	}
 	@Override
 	public String genInsertSQL(String table, JSONObject joModel, List<Object> values)  {

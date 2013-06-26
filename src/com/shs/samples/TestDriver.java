@@ -11,22 +11,25 @@ public class TestDriver {
 	public static void main(String[] args) {
 		ConnectionManager.DIALECT = "oralce";
 		ConnectionManager.DRIVER = "oracle.jdbc.OracleDriver";
+		ConnectionManager.URL = "jdbc:oracle:thin:@chyxion-pad:1521:oracle";
 		ConnectionManager.USER_NAME = "chyxion";
 		ConnectionManager.PASSWORD = "0211";
-		BaseDAO.DEFAULT_CHAR_LOWER_CASE = true;
-		BaseDAO.execute(new ConnectionOperator() {
+		BaseDAO dao = new BaseDAO();
+		dao.setLowerCase(true);
+		dao.execute(new ConnectionOperator() {
 			@Override
 			protected void run() throws Exception {
 				
 			}
 		});
-		BaseDAO.query(new ResultSetOperator() {
+		dao.query(new ResultSetOperator() {
 			@Override
 			protected void run() throws Exception {
 				JSONArray jaResult = new JSONArray();
 				while (resultSet.next()) {
 					jaResult.put(resultSet.getString(1));
 				}
+				result = jaResult;
 			}
 		}, "select name from demo_users");
 	}

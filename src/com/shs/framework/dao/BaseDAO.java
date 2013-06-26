@@ -16,17 +16,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import com.shs.framework.dao.traits.IDbTrait;
-import com.shs.framework.dao.traits.OracleTrait;
-import com.shs.framework.dao.traits.QueryStatement;
+import com.shs.framework.dao.traits.StatementWrapper;
 import com.shs.framework.utils.JSONUtils;
 
 /**
@@ -40,41 +37,57 @@ import com.shs.framework.utils.JSONUtils;
  * Copyright:
  */
 @SuppressWarnings("unchecked")
-public class BaseDAO {
+public final class BaseDAO {
 	/**
 	 * 数据库特征
 	 */
-	private static IDbTrait dbTrait = new OracleTrait();
-	public static void setDbTrait(IDbTrait dbt) {
+	private IDbTrait dbTrait = ConnectionManager.getDbTrait();
+	public void setDbTrait(IDbTrait dbt) {
 		dbTrait = dbt;
 	}
 	private static Logger logger = Logger.getLogger(BaseDAO.class);
 	/**
 	 * SQL batch size
 	 */
-	protected static int SQL_BATCH_SIZE = 1024;
+	public static int batchSize = 1024;
 	/**
 	 * 默认字符小写
 	 */
-	public static boolean DEFAULT_CHAR_LOWER_CASE = false;
+	private boolean lowerCase = false;
+	/**
+	 * 启用事件
+	 */
+	private IEventHandler eventHandler;
+	public IEventHandler getEventHandler() {
+		return eventHandler;
+	}
+	public BaseDAO setEventHandler(IEventHandler e) {
+		eventHandler = e;
+		return this;
+	}
+	public BaseDAO setLowerCase(boolean lowerCase) {
+		this.lowerCase = lowerCase;
+		return this;
+	}
 	/**
 	 * 获得连接
 	 */
-	public static Connection getConnection()  {
+	public Connection getConnection()  {
 		return ConnectionManager.getConnection();
 	}
 
     /**
-     * 查找一个字符串，如： findString("select name from users where id = 110101") => "chyxion"
+     * 查找一个字符串，如： 
+     * findStr("select name from users where id = 110101") => "chyxion"
      * @param strSQL 查询SQL字符串
      * @param values <Object[]>, List<Object>, <JSONArray>
      * @return 返回查找到的值或者空
      * @
      */
-	public static String findStr(final String strSQL, final Object ... values)  {
+	public String findStr(final String strSQL, final Object ... values)  {
 		return findObj(strSQL, values);
 	}
-	public static <T> T findObj(final String strSQL, final Object ... values)  {
+	public <T> T findObj(final String strSQL, final Object ... values)  {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -90,11 +103,11 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static String findStr(Connection dbConnection, String strSQL, Object ... values) {
+	public String findStr(Connection dbConnection, String strSQL, Object ... values) {
 		return findObj(dbConnection, strSQL, values);
 	}
-	public static <T> T findObj(Connection dbConnection, String strSQL, Object ... values)  {
-		return new DAOCore(dbConnection).findObj(strSQL, values);
+	public <T> T findObj(Connection dbConnection, String strSQL, Object ... values)  {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).findObj(strSQL, values);
 	}
 	/**
 	 * 查询返回List<String>
@@ -104,8 +117,8 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static List<String> findStrList(Connection dbConnection, String strSQL, Object ... values) {
-		return new DAOCore(dbConnection).findStrList(strSQL, values);
+	public List<String> findStrList(Connection dbConnection, String strSQL, Object ... values) {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).findStrList(strSQL, values);
 	}
 	/**
 	 * 查询返回List<String>
@@ -114,7 +127,7 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static List<String> findStrList(final String strSQL, final Object ... values) {
+	public List<String> findStrList(final String strSQL, final Object ... values) {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run() {
@@ -122,22 +135,22 @@ public class BaseDAO {
 			}
 		});
 	}
-	public static int findInt(final String strSQL, final Object ... values) {
+	public int findInt(final String strSQL, final Object ... values) {
 		return findObj(strSQL, values);
 	}
-	public static int findInt(Connection dbConnection, String strSQL, Object ... values) {
+	public int findInt(Connection dbConnection, String strSQL, Object ... values) {
 		return findObj(dbConnection, strSQL, values);
 	}
-	public static int findLong(final String strSQL, final Object ... values) {
+	public int findLong(final String strSQL, final Object ... values) {
 		return findObj(strSQL, values);
 	}
-	public static int findLong(Connection dbConnection, String strSQL, Object ... values) {
+	public int findLong(Connection dbConnection, String strSQL, Object ... values) {
 		return findObj(dbConnection, strSQL, values);
 	}
-	public static int findDouble(final String strSQL, final Object ... values) {
+	public int findDouble(final String strSQL, final Object ... values) {
 		return findObj(strSQL, values);
 	}
-	public static int findDouble(Connection dbConnection, String strSQL, Object ... values) {
+	public int findDouble(Connection dbConnection, String strSQL, Object ... values) {
 		return findObj(dbConnection, strSQL, values);
 	}
 	/**
@@ -146,11 +159,11 @@ public class BaseDAO {
 	 * @param rso
 	 * @return
 	 */
-	public static <T> T query(final ResultSetOperator rso, final String strSQL, final Object ... values)  {
+	public <T> T query(final ResultSetOperator rso, final String strSQL, final Object ... values)  {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
-				result = new DAOCore(dbConnection).query(rso, strSQL, values);
+				result = new DAOCore(lowerCase, dbConnection, dbTrait, event).query(rso, strSQL, values);
 			}
 		});
 	}
@@ -161,8 +174,8 @@ public class BaseDAO {
 	 * @param rso
 	 * @return
 	 */
-	public static <T> T query(Connection dbConnection, ResultSetOperator rso, String strSQL, Object ... values)  {
-		return new DAOCore(dbConnection).query(rso, strSQL, values);
+	public <T> T query(Connection dbConnection, ResultSetOperator rso, String strSQL, Object ... values)  {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).query(rso, strSQL, values);
 	}
 	/**
 	 * 执行Connection的操作, 参数为Connection操作器,
@@ -170,10 +183,13 @@ public class BaseDAO {
 	 * @param co
 	 * @
 	 */
-	public static <T> T execute(ConnectionOperator co)  {
+	public <T> T execute(ConnectionOperator co)  {
 		Connection dbConnection = null;
 		try {
 			dbConnection = getConnection();
+			co.lowerCase = lowerCase;
+			co.event = eventHandler;
+            co.dbTrait = dbTrait;
             co.dbConnection = dbConnection;
 			co.run();
 			return (T) co.result;
@@ -184,10 +200,10 @@ public class BaseDAO {
 			close(dbConnection, co.statement, co.resultSet);
 		}
 	}
-	public static boolean execute(Connection dbConnection, String strSQL)  {
-		return new DAOCore(dbConnection).execute(strSQL);
+	public boolean execute(Connection dbConnection, String strSQL)  {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).execute(strSQL);
 	}
-	public static boolean execute(final String strSQL)  {
+	public boolean execute(final String strSQL)  {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -201,12 +217,15 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static <T> T executeTransaction(ConnectionOperator co) {
+	public <T> T executeTransaction(ConnectionOperator co) {
 		Connection dbConnection = null;
 		try {
 			dbConnection = getConnection();
 			dbConnection.setAutoCommit(false);
             co.dbConnection = dbConnection;
+			co.lowerCase = lowerCase;
+			co.event = eventHandler;
+            co.dbTrait = dbTrait;
 			co.run();
 			dbConnection.commit();
 			return (T) co.result;
@@ -264,7 +283,7 @@ public class BaseDAO {
 	 * @param listSQLs
 	 * @return 更新的数据行数 数组。
 	 */
-	public static void executeBatch(final List<String> listSQLs)  {
+	public void executeBatch(final List<String> listSQLs)  {
 		executeTransaction(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -277,7 +296,7 @@ public class BaseDAO {
 	 * @param listSQLs
 	 * @
 	 */
-	public static void executeBatch(Connection dbConnection, List<String> listSQLs)
+	public void executeBatch(Connection dbConnection, List<String> listSQLs)
 			 {
 		Statement statement = null;
 		try {
@@ -285,7 +304,7 @@ public class BaseDAO {
 			int i = 0;
 			for (String sql : listSQLs) {
 				statement.addBatch(sql);
-				if (++i > SQL_BATCH_SIZE) {
+				if (++i > batchSize) {
 					i = 0;
 					statement.executeBatch();
 				}
@@ -303,10 +322,10 @@ public class BaseDAO {
 	 * @param values, [[0, 1], [2, 3]]
 	 * @
 	 */
-	public static void executeBatch(final String strSQL, final List<Object> values) {
+	public void executeBatch(final String strSQL, final List<Object> values) {
 		executeBatch(strSQL, new JSONArray(values));
 	}
-	public static void executeBatch(Connection dbConnection, final String strSQL, final List<Object> values)  {
+	public void executeBatch(Connection dbConnection, final String strSQL, final List<Object> values)  {
 		executeBatch(dbConnection, strSQL, new JSONArray(values));
 	}
 	/**
@@ -315,7 +334,7 @@ public class BaseDAO {
 	 * @param jaValues, [[0, 1], [2, 3]]
 	 * @
 	 */
-	public static void executeBatch(final String strSQL, final JSONArray jaValues) {
+	public void executeBatch(final String strSQL, final JSONArray jaValues) {
 		executeTransaction(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -330,16 +349,16 @@ public class BaseDAO {
 	 * @param jaValues, [[1, 2], [3, 4]]
 	 * @
 	 */
-	public static void executeBatch(Connection dbConnection, String strSQL, JSONArray jaValues)  {
+	public void executeBatch(Connection dbConnection, String strSQL, JSONArray jaValues)  {
 		PreparedStatement preparedStatement = null;
 		try {
-			new DAOCore(dbConnection).executeBatch(strSQL, jaValues);
+			new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).executeBatch(strSQL, jaValues);
 		} finally {
 			close(preparedStatement);
 		}
 	}
-	public static void insert(Connection dbConnection, String table, JSONArray jaFields, JSONArray jaValues)  {
-		new DAOCore(dbConnection).insert(table, jaFields, jaValues);
+	public void insert(Connection dbConnection, String table, JSONArray jaFields, JSONArray jaValues)  {
+		new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).insert(table, jaFields, jaValues);
 	}
 	/**
 	 * 从resultSet中返回一个JSONObject, JSON字段
@@ -347,19 +366,19 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static JSONObject getJSONObject(ResultSet resultSet) {
-		return getJSONObject(resultSet, DEFAULT_CHAR_LOWER_CASE);
+	public JSONObject getJSONObject(ResultSet resultSet) {
+		return getJSONObject(resultSet, lowerCase);
 	}
 	/**
 	 * @param rs
-	 * @param lowerCase 指示JSONObject字段名称的小写
+	 * @param lc 指示JSONObject字段名称的小写
 	 * @return
 	 * @
 	 */
-	public static JSONObject getJSONObject(ResultSet rs, boolean lowerCase) {
-		return new JSONObject(getMap(rs, lowerCase));
+	public JSONObject getJSONObject(ResultSet rs, boolean lc) {
+		return new JSONObject(getMap(rs, lc));
 	}
-	public static Map<String, Object> getMap(ResultSet rs, boolean lowerCase) {
+	public static Map<String, Object> getMap(ResultSet rs, boolean lc) {
 		try {
 			ResultSetMetaData metaData = rs.getMetaData();
 			int numColumn = metaData.getColumnCount();
@@ -375,7 +394,7 @@ public class BaseDAO {
 						Pattern.compile("[A-Z]").matcher(colName).find()) {
 					// 什么都不做
 				} else {
-					colName = lowerCase ? 
+					colName = lc ? 
 						colName.toLowerCase() : colName.toUpperCase();
 				}
 				Object objValue;
@@ -405,44 +424,41 @@ public class BaseDAO {
 	 * @param resultSet
 	 * @return
 	 */
-	public static JSONArray getJSONArray(ResultSet resultSet) {
-		return getJSONArray(resultSet, DEFAULT_CHAR_LOWER_CASE);
+	public JSONArray getJSONArray(ResultSet resultSet) {
+		return getJSONArray(resultSet, lowerCase);
 	}
-	public static List<Map<String, Object>> 
+	public List<Map<String, Object>> 
 		getMapList(ResultSet resultSet) {
-		return getMapList(resultSet, DEFAULT_CHAR_LOWER_CASE);
+		return getMapList(resultSet, lowerCase);
 	}
 	/**
 	 * 从resultSet中返回JSONArray, 
 	 * @param resultSet
-	 * @param lowerCase 指示JSON属性字段名称小写
+	 * @param lc 指示JSON属性字段名称小写
 	 * @return JSONArray
 	 * @
 	 */
-	public static JSONArray getJSONArray(ResultSet resultSet, boolean lowerCase)
+	public JSONArray getJSONArray(ResultSet resultSet, boolean lc)
 			 {
-		return new JSONArray(getMapList(resultSet, lowerCase));
+		return new JSONArray(getMapList(resultSet, lc));
 	}
 	/**
 	 * 从resultSet中返回List<Map<String, Object>>
 	 * @param resultSet
-	 * @param lowerCase
+	 * @param lc
 	 * @return List<Map<String, Object>>
 	 * @
 	 */
 	public static List<Map<String, Object>> 
-		getMapList(ResultSet resultSet, boolean lowerCase)
-			 {
+		getMapList(ResultSet resultSet, boolean lc) {
 		List<Map<String, Object>> mapList = new LinkedList<Map<String, Object>>();
-		
 		try {
 			while (resultSet.next()) {
-				mapList.add(getMap(resultSet, lowerCase));
+				mapList.add(getMap(resultSet, lc));
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
-		
 		return mapList;
 	}
 	/**
@@ -451,7 +467,7 @@ public class BaseDAO {
 	 * @return 
 	 * @ 
 	 */
-	public static int count(final String table)  {
+	public int count(final String table)  {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -466,7 +482,7 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static int count(Connection dbConnection, String table)  {
+	public int count(Connection dbConnection, String table)  {
 		return findInt("select count(1) from " + table);
 	}
 	/**
@@ -517,7 +533,7 @@ public class BaseDAO {
 	 * @param index
 	 * @param value
 	 */
-	protected static void setValue(PreparedStatement ps, int index, Object value) {
+	public static void setValue(PreparedStatement ps, int index, Object value) {
 		try {
 			if (value == null || value.equals(JSONObject.NULL)) { // 设置null
 	            ParameterMetaData pmd = ps.getParameterMetaData();
@@ -552,7 +568,7 @@ public class BaseDAO {
 	 * @param values
 	 * @
 	 */
-	protected static PreparedStatement setValues(PreparedStatement ps, Object values) {
+	public static PreparedStatement setValues(PreparedStatement ps, Object values) {
 		if (values != null) {
 			if (values instanceof Object[]) {
 				Object[] objArrayValues = (Object[]) values;
@@ -586,7 +602,7 @@ public class BaseDAO {
 	 * @return select age from users where id in (?, ?) and name = ?
 	 * @
 	 */
-	private static String buildSQL(String strSQL, JSONArray jaValues, List<Object> outValues) {
+	public static String buildSQL(String strSQL, JSONArray jaValues, List<Object> outValues) {
         String rtnSQL;
         StringBuffer sbSQL = new StringBuffer(); // 重新构造SQL
 		String[] saSQL = (strSQL + " ").split("\\?"); // 加上最后空格，否则如果最后一个为?占位，则拆分将会少一个元素
@@ -620,7 +636,7 @@ public class BaseDAO {
 	 * @return select gender from users where name = ?
 	 * @
 	 */
-	private static String buildSQL(String strSQL, Object[] oaValues, List<Object> outValues) {
+	public static String buildSQL(String strSQL, Object[] oaValues, List<Object> outValues) {
         String rtnSQL;
         StringBuffer sbSQL = new StringBuffer(); // 重新构造SQL
 		String[] saSQL = (strSQL + " ").split("\\?"); // 加上最后空格，否则如果最后一个为?占位，则拆分将会少一个元素
@@ -650,7 +666,7 @@ public class BaseDAO {
 	 * @return select name from users where id in (?, ?)
 	 * @
 	 */
-	private static String buildSQL(String strSQL, JSONObject joValues, List<Object> outValues) {
+	public static String buildSQL(String strSQL, JSONObject joValues, List<Object> outValues) {
         String rtnSQL;
         if (joValues.length() > 0) {
             StringBuffer sbSQL = new StringBuffer(); // 重新构造SQL
@@ -673,7 +689,7 @@ public class BaseDAO {
         }
 		return rtnSQL;
 	}
-    private static String buildSQL(String strSQL, Map<String, Object> mapValues, List<Object> outValues) {
+    public static String buildSQL(String strSQL, Map<String, Object> mapValues, List<Object> outValues) {
         String rtnSQL;
         if (mapValues.size() > 0) {
             StringBuffer sbSQL = new StringBuffer(); // 重新构造SQL
@@ -701,7 +717,7 @@ public class BaseDAO {
 	 * @return select name from users where gender = ? and id in (?, ?)
 	 * @
 	 */
-	private static String buildSQL(String strSQL, List<Object> listValues, List<Object> outValues) {
+	public static String buildSQL(String strSQL, List<Object> listValues, List<Object> outValues) {
 		StringBuffer sbSQL = new StringBuffer(); // 重新构造SQL
 		String[] saSQL = (strSQL + " ").split("\\?"); // 加上最后空格，否则如果最后一个为?占位，则拆分将会少一个元素
 		if (saSQL.length == 2 && listValues.size() > 1) { // 如果占位?数量少于传入值listValues，展开占位
@@ -730,14 +746,13 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static PreparedStatement prepareStatement(Connection dbConnection, 
+	public static StatementWrapper prepareStatement(Connection dbConnection, 
 			String strSQL, 
 			Object ... values)  {
 		String newSQL; // 重新构造SQL
-		List<Object> newValues = null; // 展开集合后新的值
+		List<Object> newValues = new LinkedList<Object>(); // 展开集合后新的值
 		PreparedStatement ps; // 返回值
 		if (values.length == 1) { // 传入1
-			newValues = new LinkedList<Object>();
 			Object oValues = values[0];
 			if (oValues instanceof Object[]) {
 				newSQL = buildSQL(strSQL, (Object[]) oValues, newValues);
@@ -754,7 +769,6 @@ public class BaseDAO {
 				newValues.add(oValues);
 			}
 		} else if (values.length > 1) { // 参数数组
-			newValues = new LinkedList<Object>();
 			newSQL = buildSQL(strSQL, values, newValues);
 		} else { // 没有提供参数
 			newSQL = strSQL;
@@ -767,13 +781,13 @@ public class BaseDAO {
 			throw new RuntimeException(e);
 		}
 		// 使用生成的新值设置
-		if (newValues != null) {
+		if (newValues.size() > 0) {
 			setValues(ps, newValues);
 		}
-		return ps;
+		return new StatementWrapper(strSQL, newValues, ps);
 	}	
-	public static PreparedStatement prepareStatement(Connection dbConnection, QueryStatement qs)  {
-		return prepareStatement(dbConnection, qs.getStrSQL(), qs.getValues());
+	public static StatementWrapper prepareStatement(Connection dbConnection, StatementWrapper qs)  {
+		return prepareStatement(dbConnection, qs.getSQL(), qs.getValues());
 	}
 	/**
 	 * 展开传入值集合对象，生成值占位如：?, ?, ?
@@ -782,7 +796,7 @@ public class BaseDAO {
 	 * @return 生成预备SQL
 	 * @
 	 */
-	protected static String genValueHolder(Object v, List<Object> valuesExpanded) {
+	public static String genValueHolder(Object v, List<Object> valuesExpanded) {
 		StringBuffer sbSQL = new StringBuffer();
 		if (v instanceof Object[]) { // 值为对象数组，展开构建对应的SQL, 下同
 			Object[] objArrayValues = (Object[]) v;
@@ -809,38 +823,13 @@ public class BaseDAO {
 		return sbSQL.toString();
 	}
 	/**
-	 * 生成更新预备SQL
-	 * @param dbConnection
-	 * @param table
-	 * @param joModel
-	 * @param objWhere 条件对象
-	 * @return 已设值的statement
-	 * @
-	 */
-	protected static PreparedStatement genUpdateStatement(Connection dbConnection,
-			String table, JSONObject joModel, 
-			JSONObject joWhere) {
-		
-		List<Object> values = new LinkedList<Object>();
-		StringBuffer sbSQL = 
-			new StringBuffer(dbTrait.genUpdateSetSQL(table, joModel, values))
-			.append(" where ").append(dbTrait.genWhereEqAnd(joWhere, values));
-		logger.debug("Gen Update SQL");
-		logger.debug(sbSQL.toString());
-		try {
-			return setValues(dbConnection.prepareStatement(sbSQL.toString()), values);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	/**
 	 * 保存JSON对象, JSON属性名和数据库表名相同
 	 * @param table, 数据库表名
 	 * @param joModel 需要保存的JSONObject
 	 * @return
 	 * @ 
 	 */
-	public static boolean insert(final String table, final JSONObject joModel) {
+	public boolean insert(final String table, final JSONObject joModel) {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -856,13 +845,13 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static boolean insert(Connection dbConnection, String table, JSONObject joModel) {
-		return new DAOCore(dbConnection).insert(table, joModel);
+	public boolean insert(Connection dbConnection, String table, JSONObject joModel) {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).insert(table, joModel);
 	}
-	public static void insert(Connection dbConnection, String table, JSONArray jaModels) {
-		new DAOCore(dbConnection).insert(table, jaModels);
+	public void insert(Connection dbConnection, String table, JSONArray jaModels) {
+		new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).insert(table, jaModels);
 	}
-	public static void insert(final String table, final JSONArray jaModels) {
+	public void insert(final String table, final JSONArray jaModels) {
 		executeTransaction(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -878,7 +867,7 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static int update(final String table, final JSONObject joModel, final JSONObject where) {
+	public int update(final String table, final JSONObject joModel, final JSONObject where) {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
@@ -895,8 +884,8 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static int update(Connection dbConnection, String table, JSONObject joModel, JSONObject where) {
-		return new DAOCore(dbConnection).update(table, joModel, where);
+	public int update(Connection dbConnection, String table, JSONObject joModel, JSONObject where) {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).update(table, joModel, where);
 	}
 	/**
 	 * @param strSQL
@@ -904,8 +893,8 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static int update(final String strSQL, final Object ... values) {
-		return (Integer)execute(new ConnectionOperator() {
+	public int update(final String strSQL, final Object ... values) {
+		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
 				result = update(strSQL, values);
@@ -920,8 +909,8 @@ public class BaseDAO {
 	 * @return 
 	 * @
 	 */
-	public static int update(Connection dbConnection, final String strSQL, final Object ... values) {
-		return new DAOCore(dbConnection).update(strSQL, values);
+	public int update(Connection dbConnection, final String strSQL, final Object ... values) {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).update(strSQL, values);
 	}
 	/**
 	 * @param strSQL
@@ -929,40 +918,35 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static JSONObject findJSONObject(final boolean lowerCase, final String strSQL, final Object ... values) {
-		return execute(new ConnectionOperator() {
-			@Override
-			public void run()  {
-				result = findJSONObject(lowerCase, strSQL, values);
-			}
-		});
+	public JSONObject findJSONObject(final boolean lc, final String strSQL, final Object ... values) {
+		Map<String, Object> mapRtn = findMap(lc, strSQL, values);
+		return mapRtn != null ? new JSONObject(mapRtn) : null;
 	}
-
 	/**
 	 * @param strSQL
 	 * @param values 需要填充的值
 	 * @return
 	 * @
 	 */
-	public static JSONArray findJSONArray(final boolean lowerCase, 
+	public JSONArray findJSONArray(final boolean lc, 
 			Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values)  {
-		return new JSONArray(findMapList(lowerCase, dbConnection, strSQL, values));
+		return new JSONArray(findMapList(lc, dbConnection, strSQL, values));
 	}
-	public static JSONArray findJSONArray(Connection dbConnection, 
+	public JSONArray findJSONArray(Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values) {
-		return findJSONArray(DEFAULT_CHAR_LOWER_CASE, dbConnection, strSQL, values);
+		return findJSONArray(lowerCase, dbConnection, strSQL, values);
 	}
-	public static List<Map<String, Object>> findMapList(final boolean lowerCase, 
+	public List<Map<String, Object>> findMapList(final boolean lc, 
 			Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values)  {
-		return new DAOCore(dbConnection).findMapList(lowerCase, strSQL, values);
+		return new DAOCore(lc, dbConnection, dbTrait, eventHandler).findMapList(strSQL, values);
 	}
-	public static List<Map<String, Object>> 
-		findMapListPage(final boolean lowerCase, 
+	public List<Map<String, Object>> 
+		findMapListPage(final boolean lc, 
 					Connection dbConnection, 
 					String orderCol,
 					String direction,
@@ -970,11 +954,11 @@ public class BaseDAO {
 					int limit,
 					String strSQL, 
 					final Object ... values)  {
-		return new DAOCore(dbConnection).findMapListPage(lowerCase, orderCol, direction, start, limit, strSQL, values);
+		return new DAOCore(lc, dbConnection, dbTrait, eventHandler).findMapListPage(orderCol, direction, start, limit, strSQL, values);
 	}
-	public static JSONArray 
+	public JSONArray 
 		findJSONArrayPage(
-			final boolean lowerCase, 
+			final boolean lc, 
 			Connection dbConnection, 
 			String orderCol,
 			String direction,
@@ -982,9 +966,9 @@ public class BaseDAO {
 			int limit,
 			String strSQL, 
 			final Object ... values)  {
-		return new JSONArray(findMapListPage(lowerCase, dbConnection, orderCol, direction, start, limit, strSQL, values));
+		return new JSONArray(findMapListPage(lc, dbConnection, orderCol, direction, start, limit, strSQL, values));
 	}
-	public static JSONArray 
+	public JSONArray 
 		findJSONArrayPage(
 			Connection dbConnection, 
 			String orderCol,
@@ -994,7 +978,7 @@ public class BaseDAO {
 			String strSQL, 
 			final Object ... values)  {
 		return findJSONArrayPage(
-				DEFAULT_CHAR_LOWER_CASE, 
+				lowerCase, 
 				dbConnection, 
 				orderCol, 
 				direction, 
@@ -1003,23 +987,18 @@ public class BaseDAO {
 				strSQL, 
 				values);
 	}
-	public static JSONArray 
+	public JSONArray 
 		findJSONArrayPage(
-			final boolean isLowerCalse,
+			final boolean lc,
 			final String orderCol,
 			final String direction,
 			final int start,
 			final int limit,
 			final String strSQL, 
 			final Object ... values)  {
-		return execute(new ConnectionOperator() {
-			@Override
-			public void run()  {
-				result = findJSONArrayPage(isLowerCalse, orderCol, direction, start, limit, strSQL, values);
-			}
-		});
+		return new JSONArray(findMapListPage(lc, orderCol, direction, start, limit, strSQL, values));
 	}
-	public static JSONArray 
+	public JSONArray 
 		findJSONArrayPage(
 					final String orderCol,
 					final String direction,
@@ -1027,7 +1006,7 @@ public class BaseDAO {
 					final int limit,
 					final String strSQL, 
 					final Object ... values)  {
-		return findJSONArrayPage(DEFAULT_CHAR_LOWER_CASE, 
+		return findJSONArrayPage(lowerCase, 
 				orderCol, 
 				direction, 
 				start, 
@@ -1035,7 +1014,7 @@ public class BaseDAO {
 				strSQL, 
 				values);
 	}
-	public static List<Map<String, Object>> 
+	public List<Map<String, Object>> 
 		findMapListPage(Connection dbConnection, 
 			String orderCol,
 			String direction,
@@ -1043,7 +1022,7 @@ public class BaseDAO {
 			int limit,
 			String strSQL, 
 			final Object ... values)  {
-		return findMapListPage(DEFAULT_CHAR_LOWER_CASE, 
+		return findMapListPage(lowerCase, 
 				dbConnection, 
 				orderCol, 
 				direction, 
@@ -1052,8 +1031,8 @@ public class BaseDAO {
 				strSQL, 
 				values);
 	}
-	public static List<Map<String, Object>> 
-		findMapListPage(final boolean isLowerCase, 
+	public List<Map<String, Object>> 
+		findMapListPage(final boolean lc, 
 			final String orderCol,
 			final String direction,
 			final int start,
@@ -1063,11 +1042,11 @@ public class BaseDAO {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
-				result = findMapListPage(isLowerCase, orderCol, direction, start, limit, strSQL, values);
+				result = findMapListPage(lc, orderCol, direction, start, limit, strSQL, values);
 			}
 		});
 	}
-	public static List<Map<String, Object>> 
+	public List<Map<String, Object>> 
 		findMapListPage(
 			final String orderCol,
 			final String direction,
@@ -1075,76 +1054,76 @@ public class BaseDAO {
 			final int limit,
 			final String strSQL, 
 			final Object ... values)  {
-		return  findMapListPage(DEFAULT_CHAR_LOWER_CASE, orderCol, direction, start, limit, strSQL, values);
+		return  findMapListPage(lowerCase, orderCol, direction, start, limit, strSQL, values);
 	}
-	public static List<Map<String, Object>> 
+	public List<Map<String, Object>> 
 		findMapList(Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values)  {
-		return findMapList(DEFAULT_CHAR_LOWER_CASE, dbConnection, strSQL, values);
+		return findMapList(lowerCase, dbConnection, strSQL, values);
 	}
-	public static List<Map<String, Object>> findMapList(final boolean lowerCase, 
+	public List<Map<String, Object>> findMapList(final boolean lc, 
 			final String strSQL, 
 			final Object ... values)  {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
-				result = findMapList(lowerCase, strSQL, values);
+				result = findMapList(lc, strSQL, values);
 			}
 		});
 	}
-	public static List<Map<String, Object>> findMapList(final String strSQL, 
+	public List<Map<String, Object>> findMapList(final String strSQL, 
 			final Object ... values)  {
-		return findMapList(DEFAULT_CHAR_LOWER_CASE, strSQL, values);
+		return findMapList(lowerCase, strSQL, values);
 	}
 	/**
 	 * 查找一个JSONObject
-	 * @param lowerCase
+	 * @param lc
 	 * @param dbConnection
 	 * @param strSQL
 	 * @param values
 	 * @return 没有查到，返回null
 	 * @
 	 */
-	public static JSONObject findJSONObject(boolean lowerCase, 
+	public JSONObject findJSONObject(boolean lc, 
 			Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values)  {
-		Map<String, Object> mapRtn = findMap(lowerCase, dbConnection, strSQL, values);
+		Map<String, Object> mapRtn = findMap(lc, dbConnection, strSQL, values);
 		return mapRtn != null ? new JSONObject(mapRtn) : null;
 	}
 	/**
 	 * 查找返回Map对象，没有数据返回null
-	 * @param lowerCase
+	 * @param lc
 	 * @param dbConnection
 	 * @param strSQL
 	 * @param values
 	 * @return 没有找到返回null
 	 * @
 	 */
-	public static Map<String, Object> findMap(boolean lowerCase, 
+	public Map<String, Object> findMap(boolean lc, 
 			Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values)  {
-		return new DAOCore(dbConnection).findMap(lowerCase, strSQL, values);
+		return new DAOCore(lc, dbConnection, dbTrait, eventHandler).findMap(strSQL, values);
 	}
-	public static Map<String, Object> findMap(Connection dbConnection, 
+	public Map<String, Object> findMap(Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values) {
-		return findMap(DEFAULT_CHAR_LOWER_CASE, dbConnection, strSQL, values);
+		return findMap(lowerCase, dbConnection, strSQL, values);
 	}
-	public static Map<String, Object> findMap(final boolean lowerCase, final String strSQL, 
+	public Map<String, Object> findMap(final boolean lc, final String strSQL, 
 			final Object ... values) {
 		return execute(new ConnectionOperator() {
 			@Override
 			public void run()  {
-				result = findMap(lowerCase, strSQL, values);
+				result = findMap(lc, strSQL, values);
 			}
 		});
 	}
-	public static Map<String, Object> findMap(final String strSQL, 
+	public Map<String, Object> findMap(final String strSQL, 
 			final Object ... values) {
-		return findMap(DEFAULT_CHAR_LOWER_CASE, strSQL, values);
+		return findMap(lowerCase, strSQL, values);
 	}
 	/**
 	 * 根据preparedStringString 查找一个JSONObject
@@ -1153,8 +1132,8 @@ public class BaseDAO {
 	 * @
      * @return
 	 */
-	public static JSONObject findJSONObject(final String strSQL, final Object ... values) {
-		return findJSONObject(DEFAULT_CHAR_LOWER_CASE, strSQL, values);
+	public JSONObject findJSONObject(final String strSQL, final Object ... values) {
+		return findJSONObject(lowerCase, strSQL, values);
 	}
 	/**
 	 * 根据preparedStringString 查找一个JSONObject
@@ -1163,10 +1142,10 @@ public class BaseDAO {
 	 * @
      * @return
 	 */
-	public static JSONObject findJSONObject(Connection dbConnection, 
+	public JSONObject findJSONObject(Connection dbConnection, 
 			final String strSQL, 
 			final Object ... values) {
-		return findJSONObject(DEFAULT_CHAR_LOWER_CASE, dbConnection, strSQL, values);
+		return findJSONObject(lowerCase, dbConnection, strSQL, values);
 	}
 	/**
 	 * 根据提供的预备SQL, 放置的值, 查找结果为JSONArray 
@@ -1176,8 +1155,8 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static JSONArray findJSONArray(final String strSQL, final Object ... values) {
-		return findJSONArray(DEFAULT_CHAR_LOWER_CASE, strSQL, values);
+	public JSONArray findJSONArray(final String strSQL, final Object ... values) {
+		return findJSONArray(lowerCase, strSQL, values);
 	}
 	/**
 	 * 根据提供的预备SQL, 放置的值, 查找结果为JSONArray 
@@ -1187,22 +1166,24 @@ public class BaseDAO {
 	 * @return
 	 * @
 	 */
-	public static JSONArray findJSONArray(final boolean lowerCase, 
+	public JSONArray findJSONArray(final boolean lc, 
 			final String strSQL, 
 			final Object ... values)  {
-		return execute(new ConnectionOperator() {
-			@Override
-			public void run()  {
-				result = findJSONArray(lowerCase, strSQL, values);
-			}
-		});
+		return new JSONArray(findMapList(lc, strSQL, values));
 	}
 	public static class DAOCore {
+		protected IDbTrait dbTrait;
 		protected Connection dbConnection;
-		public DAOCore(Connection dbConnection) {
+		protected IEventHandler event;
+		protected boolean lowerCase;
+
+		public DAOCore(boolean lowerCase, Connection dbConnection, IDbTrait dbTrait, IEventHandler event) {
+			this.lowerCase = lowerCase;
 			this.dbConnection = dbConnection;
+			this.dbTrait = dbTrait; 
+			this.event = event;
 		}
-		public DAOCore() { }
+		public DAOCore() {}
 		/**
 		 * 查找一个String
 		 * 
@@ -1284,8 +1265,28 @@ public class BaseDAO {
 			PreparedStatement statement = null;
 			ResultSet rs = null;
 			try {
-				statement = prepareStatement(dbConnection, strSQL, values);
+				StatementWrapper sw = prepareStatement(dbConnection, strSQL, values);
+				Event e = null;
+				statement = sw.getStatement();
+				// 前置事件
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_QUERY)
+						.setSQL(sw.getSQL())
+						.setValues(sw.getValues());
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				} 
+				
 				rs = statement.executeQuery();
+				if (event != null) {
+					event.after(e);
+				}
 				rso.dbConnection = dbConnection;
 				rso.resultSet = rs;
 				rso.run();
@@ -1298,11 +1299,31 @@ public class BaseDAO {
 		}
 
 		public boolean execute(String strSQL) {
-			Statement statement = null;
+			PreparedStatement statement = null;
 			try {
 				logger.debug("execute[" + strSQL + "]");
-				statement = dbConnection.createStatement();
-				return statement.execute(strSQL);
+				
+				Event e = null;
+				statement = dbConnection.prepareStatement(strSQL);
+				// 前置事件
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_EXEC)
+						.setSQL(strSQL)
+						.setValues(new Object[]{});
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				}
+				boolean c = statement.execute();
+				if (event != null) {
+					event.after(e);
+				}
+				return c;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1321,7 +1342,7 @@ public class BaseDAO {
 				int i = 0;
 				for (String sql : listSQLs) {
 					statement.addBatch(sql);
-					if (++i > SQL_BATCH_SIZE) {
+					if (++i > batchSize) {
 						i = 0;
 						statement.executeBatch();
 					}
@@ -1368,7 +1389,7 @@ public class BaseDAO {
 							.getJSONArray(i));
 					logger.debug(jaValues.getJSONArray(i));
 					preparedStatement.addBatch();
-					if (i % SQL_BATCH_SIZE == 0 && i != 0) {
+					if (i % batchSize == 0 && i != 0) {
 						preparedStatement.executeBatch();
 					}
 				}
@@ -1418,7 +1439,25 @@ public class BaseDAO {
 				try {
 					statement = setValues(dbConnection
 							.prepareStatement(insertSQL), values);
-					return statement.executeUpdate() > 0;
+					Event e = null;
+					if (event != null) {
+						e = new Event()
+							.setConnection(dbConnection)
+							.setStatement(statement)
+							.setType(Event.TYPE_INSERT)
+							.setSQL(insertSQL)
+							.setValues(values);
+						if (event.before(e)) {
+							statement = e.getStatement();
+						} else {
+							throw new InterruptException(e.getErrorMsg());
+						}
+					}
+					boolean b = statement.executeUpdate() > 0;
+					if (event != null) {
+						event.after(e);
+					}
+					return b;
 				} catch (SQLException e) {
 					throw new RuntimeException(e);
 				}
@@ -1454,9 +1493,27 @@ public class BaseDAO {
 		public int update(String table, JSONObject joModel, JSONObject where)  {
 			PreparedStatement statement = null;
 			try {
-				statement = genUpdateStatement(dbConnection, table, joModel,
-						where);
-				return statement.executeUpdate();
+				StatementWrapper sw = genUpdateStatement(dbConnection, table, joModel, where);
+				statement = sw.getStatement();
+				Event e = null;
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_UPDATE)
+						.setSQL(sw.getSQL())
+						.setValues(sw.getValues());
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				}
+				int c = statement.executeUpdate();
+				if (event != null) {
+					event.after(e);
+				}
+				return c;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1479,8 +1536,28 @@ public class BaseDAO {
 		public int update(final String strSQL, final Object... values)  {
 			PreparedStatement statement = null;
 			try {
-				statement = prepareStatement(dbConnection, strSQL, values);
-				return statement.executeUpdate();
+				StatementWrapper sw = prepareStatement(dbConnection, strSQL, values);
+				statement = sw.getStatement();
+				Event e = null;
+				// 前置事件
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_UPDATE)
+						.setSQL(sw.getSQL())
+						.setValues(values);
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				}
+				int c = statement.executeUpdate();
+				if (event != null) {
+					event.after(e);
+				}
+				return c;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1495,28 +1572,46 @@ public class BaseDAO {
 		 * @return
 		 * @
 		 */
-		public JSONArray findJSONArray(final boolean lowerCase,
+		public JSONArray findJSONArray(final boolean lc,
 				final String strSQL,
 				final Object... values)  {
-			return new JSONArray(findMapList(lowerCase, strSQL,
+			return new JSONArray(findMapList(lc, strSQL,
 					values));
 		}
 
 		public JSONArray findJSONArray(
 				final String strSQL, final Object... values)  {
-			return findJSONArray(DEFAULT_CHAR_LOWER_CASE, strSQL,
+			return findJSONArray(lowerCase, strSQL,
 					values);
 		}
 
-		public List<Map<String, Object>> findMapList(final boolean lowerCase,
+		public List<Map<String, Object>> findMapList(final boolean lc,
 				final String strSQL,
 				final Object... values)  {
 			PreparedStatement statement = null;
 			ResultSet resultSet = null;
 			try {
-				statement = prepareStatement(dbConnection, strSQL, values);
+				StatementWrapper sw = prepareStatement(dbConnection, strSQL, values);
+				statement = sw.getStatement();
+				Event e = null;
+				// 前置事件
+				if (event != null) {
+					e = new Event()
+					.setConnection(dbConnection)
+					.setStatement(statement)
+					.setType(Event.TYPE_QUERY)
+					.setSQL(sw.getSQL());
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				}
 				resultSet = statement.executeQuery();
-				return getMapList(resultSet, lowerCase);
+				if (event != null) {
+					event.after(e);
+				}
+				return getMapList(resultSet, lc);
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1524,18 +1619,39 @@ public class BaseDAO {
 			}
 		}
 
-		public List<Map<String, Object>> findMapListPage(final boolean lowerCase,
+		public List<Map<String, Object>> findMapListPage(final boolean lc,
 				String orderCol, String direction,
 				int start, int limit, String strSQL, final Object... values)
 				 {
 			PreparedStatement statement = null;
 			ResultSet resultSet = null;
 			try {
-				statement = prepareStatement(dbConnection, dbTrait
+				
+				StatementWrapper sw = prepareStatement(dbConnection, dbTrait
 						.pageStatement(orderCol, direction, start, limit,
 								strSQL, values));
+				statement = sw.getStatement();
+				Event e = null;
+				// 前置事件
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_QUERY)
+						.setSQL(sw.getSQL())
+						.setValues(sw.getValues());
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				}
 				resultSet = statement.executeQuery();
-				return getMapList(resultSet, lowerCase);
+				
+				if (event != null) {
+					event.after(e);
+				}
+				return getMapList(resultSet, lc);
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1543,31 +1659,31 @@ public class BaseDAO {
 			}
 		}
 
-		public JSONArray findJSONArrayPage(final boolean lowerCase,
+		public JSONArray findJSONArrayPage(final boolean lc,
 				 String orderCol, String direction,
 				int start, int limit, String strSQL, final Object... values)
 				 {
-			return new JSONArray(findMapListPage(lowerCase, orderCol,
+			return new JSONArray(findMapListPage(lc, orderCol,
 					direction, start, limit, strSQL, values));
 		}
 
 		public JSONArray findJSONArrayPage(
 				String orderCol, String direction, int start, int limit,
 				String strSQL, final Object... values)  {
-			return findJSONArrayPage(DEFAULT_CHAR_LOWER_CASE, 
+			return findJSONArrayPage(lowerCase, 
 					orderCol, direction, start, limit, strSQL, values);
 		}
 
 		public List<Map<String, Object>> findMapListPage(
 				String orderCol, String direction, int start, int limit,
 				String strSQL, final Object... values)  {
-			return findMapListPage(DEFAULT_CHAR_LOWER_CASE, orderCol,
+			return findMapListPage(lowerCase, orderCol,
 					direction, start, limit, strSQL, values);
 		}
 
 		public List<Map<String, Object>> findMapList(
 				final String strSQL, final Object... values)  {
-			return findMapList(DEFAULT_CHAR_LOWER_CASE, strSQL,
+			return findMapList(lowerCase, strSQL,
 					values);
 		}
 
@@ -1581,10 +1697,10 @@ public class BaseDAO {
 		 * @return 没有查到，返回null
 		 * @
 		 */
-		public JSONObject findJSONObject(boolean lowerCase,
+		public JSONObject findJSONObject(boolean lc,
 				final String strSQL,
 				final Object... values)  {
-			Map<String, Object> mapRtn = findMap(lowerCase, strSQL, values);
+			Map<String, Object> mapRtn = findMap(lc, strSQL, values);
 			return mapRtn != null ? new JSONObject(mapRtn) : null;
 		}
 
@@ -1598,16 +1714,35 @@ public class BaseDAO {
 		 * @return 没有找到返回null
 		 * @
 		 */
-		public Map<String, Object> findMap(boolean lowerCase,
+		public Map<String, Object> findMap(boolean lc,
 				final String strSQL, final Object... values)  {
 			PreparedStatement statement = null;
 			ResultSet resultSet = null;
 			Map<String, Object> mapRtn = null;
 			try {
-				statement = prepareStatement(dbConnection, strSQL, values);
+				StatementWrapper sw = prepareStatement(dbConnection, strSQL, values); 
+				statement = sw.getStatement();
+				Event e = null;
+				// 前置事件
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_QUERY)
+						.setSQL(sw.getSQL())
+						.setValues(sw.getValues());
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				}
 				resultSet = statement.executeQuery();
+				if (event != null) {
+					event.after(e);
+				}
 				if (resultSet.next())
-					mapRtn = getMap(resultSet, lowerCase);
+					mapRtn = getMap(resultSet, lc);
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1618,7 +1753,7 @@ public class BaseDAO {
 
 		public Map<String, Object> findMap(final String strSQL,
 				final Object... values)  {
-			return findMap(DEFAULT_CHAR_LOWER_CASE, strSQL, values);
+			return findMap(lowerCase, strSQL, values);
 		}
 
 		/**
@@ -1632,8 +1767,34 @@ public class BaseDAO {
 		 * @return
 		 */
 		public JSONObject findJSONObject(final String strSQL, final Object... values)  {
-			return findJSONObject(DEFAULT_CHAR_LOWER_CASE,
+			return findJSONObject(lowerCase,
 					strSQL, values);
+		}
+		/**
+		 * 生成更新预备SQL
+		 * @param dbConnection
+		 * @param table
+		 * @param joModel
+		 * @param objWhere 条件对象
+		 * @return 已设值的statement
+		 * @
+		 */
+		protected StatementWrapper genUpdateStatement(Connection dbConnection,
+				String table, JSONObject joModel, 
+				JSONObject joWhere) {
+			
+			List<Object> values = new LinkedList<Object>();
+			StringBuffer sbSQL = 
+				new StringBuffer(dbTrait.genUpdateSetSQL(table, joModel, values))
+				.append(" where ").append(dbTrait.genWhereEqAnd(joWhere, values));
+			logger.debug("Gen Update SQL");
+			logger.debug(sbSQL.toString());
+			try {
+				StatementWrapper sw = new StatementWrapper(sbSQL.toString(), values);
+				return sw.setStatement(setValues(dbConnection.prepareStatement(sbSQL.toString()), values));
+			} catch (SQLException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 }

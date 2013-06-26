@@ -8,7 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class SQLServerTrait extends IDbTrait {
-	public QueryStatement pageStatement(String orderCol, String direction,
+	public StatementWrapper pageStatement(String orderCol, String direction,
 			int start, int limit, String strSQL, Object... values) {
 //		SELECT  *
 //		FROM  ( SELECT    ROW_NUMBER() OVER ( ORDER BY OrderDate ) AS RowNum, *
@@ -47,7 +47,7 @@ public class SQLServerTrait extends IDbTrait {
 //			.append(orderCol)
 //			.append(" ")
 //			.append(direction);
-		return new QueryStatement(sbSQL.toString(), values);
+		return new StatementWrapper(sbSQL.toString(), values);
 	}
 	@Override
 	public String genInsertSQL(String table, JSONObject joModel, List<Object> values)  {

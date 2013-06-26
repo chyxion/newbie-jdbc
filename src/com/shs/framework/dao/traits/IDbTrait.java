@@ -21,7 +21,7 @@ import org.json.JSONObject;
  */
 public abstract class IDbTrait {
 	public static final String COLUMN_ROW_NUMBER = "row_number__";
-    public abstract QueryStatement pageStatement(
+    public abstract StatementWrapper pageStatement(
     		String orderCol, 
     		String direction, 
     		int start, 

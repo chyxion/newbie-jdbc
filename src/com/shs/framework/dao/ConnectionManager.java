@@ -1,6 +1,8 @@
 package com.shs.framework.dao;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
+
+import com.shs.framework.dao.traits.IDbTrait;
 import com.shs.framework.dao.traits.MySQLTrait;
 import com.shs.framework.dao.traits.OracleTrait;
 import com.shs.framework.dao.traits.SQLServerTrait;
@@ -43,17 +45,18 @@ public class ConnectionManager {
 	 */
 	public static String DATA_SOURCE_NAME;
 	public static IDataSourceProvider dataSourceProvider;
+	private static IDbTrait dbTrait = new OracleTrait();
 	public static void setDataSourceProvider(IDataSourceProvider dsp) {
 		dataSourceProvider = dsp;
 	}
 	public static void setDialect(String dialect) {
 		DIALECT = dialect;
 		if ("oracle".equalsIgnoreCase(dialect)) {
-			BaseDAO.setDbTrait(new OracleTrait());
+			setDbTrait(new OracleTrait());
 		} else if ("sqlserver".equalsIgnoreCase(dialect)) {
-			BaseDAO.setDbTrait(new SQLServerTrait());
+			setDbTrait(new SQLServerTrait());
 		} else if ("mysql".equalsIgnoreCase(dialect)) {
-			BaseDAO.setDbTrait(new MySQLTrait());
+			setDbTrait(new MySQLTrait());
 		}
 	}
 	/**
@@ -97,5 +100,11 @@ public class ConnectionManager {
 		return DriverManager.getConnection(url, 
 				userName, 
 				password);
+	}
+	public static void setDbTrait(IDbTrait dbTrait) {
+		ConnectionManager.dbTrait = dbTrait;
+	}
+	public static IDbTrait getDbTrait() {
+		return dbTrait;
 	}
 }

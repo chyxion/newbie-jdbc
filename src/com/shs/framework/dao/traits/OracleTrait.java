@@ -31,7 +31,7 @@ public class OracleTrait extends IDbTrait {
 		ORDER BY RowNum
 	 */
 	@Override
-	public QueryStatement pageStatement(
+	public StatementWrapper pageStatement(
 			String orderCol,
 			String direction,
 			int start, 
@@ -65,7 +65,7 @@ public class OracleTrait extends IDbTrait {
 		} else {
 			values = ArrayUtils.add(values, start);
 		}
-		return new QueryStatement(sbSQL.toString(), values);
+		return new StatementWrapper(sbSQL.toString(), values);
 	}
 
 	@Override
