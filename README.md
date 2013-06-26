@@ -26,34 +26,35 @@
     ConnectionManager.USER_NAME = "chyxion";
     // 连接密码，你的密码
     ConnectionManager.PASSWORD = "secret";
-    // 默认字符集小写，Oracle会将表字段全部[大写]，因此这里强制指定为小写
-    BaseDAO.DEFAULT_CHAR_LOWER_CASE = true;
-
+    // 实例化DAO
+    BaseDAO dao = new BaseDAO(); 
+    // 默认字段名小写，Oracle会将所有数据库表字段大写，此处强制转换为小写
+    dao.setLowerCase(true);
 ## 查询结果数据类型
 
     // 查询返回String
     // 返回值为： "Shaun Chyxion"，系列方法有，findInt, findDouble, findObj
-    BaseDAO.findStr("select name from demo_users where id = ?", 
+    dao.findStr("select name from demo_users where id = ?", 
         // 传入参数可选，可多个
         "110101");
 
     // 查询返回JSONObject、Map<String, Object>
     // 返回值为： {"id": "110101", "name": "Shaun Chyxion", "gender": "M"}
-    BaseDAO.findJSONObject("select id, name, gender from demo_users where id = ?", "110101");
+    dao.findJSONObject("select id, name, gender from demo_users where id = ?", "110101");
 
     // 返回值为Map<String, Object>: {"id": "110101", "name": "Shaun Chyxion", "gender": "M"}
-    BaseDAO.findMap("select id, name, gender from demo_users where id = ?", "110101");
+    dao.findMap("select id, name, gender from demo_users where id = ?", "110101");
 
     // 查询返回JSONArray, List<Map<String, Object>>
     // 返回值为： [{"id": "110101", "name": "Shaun Chyxion", "gender": "M"}]
-    BaseDAO.findJSONArray("select id, name, gender from demo_users where id = ?", "110101");
+    dao.findJSONArray("select id, name, gender from demo_users where id = ?", "110101");
 
     // 返回值为ListMap<String, Object>>: [{"id": "110101", "name": "Shaun Chyxion", "gender": "M"}]
-    BaseDAO.findMapList("select id, name, gender from demo_users where id = ?", "110101");
+    dao.findMapList("select id, name, gender from demo_users where id = ?", "110101");
 
     // 分页查询
     // 返回结果为： [{...}, {...}, {...}]
-    BaseDAO.findJSONArrayPage(
+    dao.findJSONArrayPage(
         "id", // 排序列
         "asc" // 排序方向
         1, // 起始序号
@@ -61,7 +62,7 @@
         // 查询语句
         "select id, name, gender from demo_users");
     // 返回结果为： [{...}, {...}, {...}]
-    BaseDAO.findMapListPage(
+    dao.findMapListPage(
         "id", // 排序列
         "asc" // 排序方向
         1, // 起始序号
@@ -79,7 +80,7 @@
             .put("name", "New JSONObject User")
             .put("gender", "M");
     // 插入到数据库
-    BaseDAO.insert("demo_users", joUser);
+    dao.insert("demo_users", joUser);
 
     // 创建用户Map
     Map<String, Object> mapUser = new HashMap<String, Object>();
@@ -87,16 +88,16 @@
     mapUser.put("name", "New Map User");
     mapUser.put("gender", "F");
     // 插入数据库
-    BaseDAO.insert("demo_users", mapUser);
+    dao.insert("demo_users", mapUser);
 
     // 可以批量插入，JSONArray，List<Map<String, Object>>，代码类似
     // 略。。。
 
     // 更新数据
-    BaseDAO.update("update demo_users set name = ? where id = ?", "Update Name", "110103");
+    dao.update("update demo_users set name = ? where id = ?", "Update Name", "110103");
 
     // 删除数据
-    BaseDAO.update("delete from demo_users where id = ?", "110103");
+    dao.update("delete from demo_users where id = ?", "110103");
     
     // JSONObject 格式更新
     JSONObject joUpdate = 
@@ -104,14 +105,14 @@
                 .put("name", "Update Name By JSONObject");
     JSONObject joWhere = new JSONObject().put("id", "110104");
     // 执行更新，生成结果为 update demo_users set name = ? where id = ?，"Update Name By JSONObject", "110104"
-    BaseDAO.update("demo_users", joUpdate, joWhere);
+    dao.update("demo_users", joUpdate, joWhere);
 
 ## Prepared Statement 参数支持
 
     // PreparedStatement 扩展样例 
     // Object[] 作为查询参数
     // 请注意这里是1个 ? 并且有括号()
-    BaseDAO.findJSONArray("select id, name, gender from demo_users where id in (?)", 
+    dao.findJSONArray("select id, name, gender from demo_users where id in (?)", 
         // 参数集合
         new String[]{"110101", "110102", "110102"});
 
@@ -121,7 +122,7 @@
     listP.add("110102");
     listP.add("110103");
     // 请注意这里是1个 ? 并且有括号()
-    BaseDAO.findJSONArray("select id, name, gender from demo_users where id in (?)", 
+    dao.findJSONArray("select id, name, gender from demo_users where id in (?)", 
         // 参数集合
         listP);
     // JSONArray集合参数 
@@ -130,27 +131,27 @@
                         .put("110102") 
                         .put("110103");
     // 请注意这里是1个 ? 并且有括号()
-    BaseDAO.findJSONArray("select id, name, gender from demo_users where id in (?)", 
+    dao.findJSONArray("select id, name, gender from demo_users where id in (?)", 
         // 参数集合
         jaP);
     // 不定参数
     // 请注意这里是3个?
-    BaseDAO.findJSONArray("select id, name, gender from demo_users where id in (?, ?, ?)", 
+    dao.findJSONArray("select id, name, gender from demo_users where id in (?, ?, ?)", 
         // 不定单数
         "110101", "110102", "110102");
     // 除了，查询，其调用方式类似，如
-    BaseDAO.update("delete from demo_users where id in (?)", new String[]{"110102", "110103"});
+    dao.update("delete from demo_users where id in (?)", new String[]{"110102", "110103"});
 
 ## 共享连接
 
     // 同一个业务，无需启动事务时候可以使用共享连接
     // 启动共享连接
-    JSONObject joResult = BaseDAO.execute(new ConnectionOperator() {
+    JSONObject joResult = dao.execute(new ConnectionOperator() {
         @Override
         public void run() throws Exception {
-            // 查询用户名，请注意，这里使用的是findStr，不是BaseDAO.findStr（如果这样，会启动新连接）
+            // 查询用户名，请注意，这里使用的是findStr，不是dao.findStr（如果这样，会启动新连接）
             String userName = findStr("select name from demo_users where id = ?", "110101");
-            // 这里是同样的处理方式，findJSONArray，不是BaseDAO.findJSONArray!!!
+            // 这里是同样的处理方式，findJSONArray，不是dao.findJSONArray!!!
             JSONArray jaBooks = findJSONArray("select name, isbn from demo_books");
             // 其他逻辑代码
             // update，insert，。。。。
@@ -165,12 +166,12 @@
 
     // 同一个连接，启动事务，异常回滚
     // 启动事务
-    JSONObject joResult = BaseDAO.executeTransaction(new ConnectionOperator() {
+    JSONObject joResult = dao.executeTransaction(new ConnectionOperator() {
         @Override
         public void run() throws Exception {
-            // 查询用户名，请注意，这里使用的是findStr，不是BaseDAO.findStr（如果这样，会启动新连接）
+            // 查询用户名，请注意，这里使用的是findStr，不是dao.findStr（如果这样，会启动新连接）
             String userName = findStr("select name from demo_users where id = ?", "110101");
-            // 这里是同样的处理方式，findJSONArray，不是BaseDAO.findJSONArray!!!
+            // 这里是同样的处理方式，findJSONArray，不是dao.findJSONArray!!!
             JSONArray jaBooks = findJSONArray("select name, isbn from demo_books");
             // 其他逻辑代码，这里已经处在事务中
             update("delete from demo_users where id in (?)", 
@@ -193,7 +194,7 @@
 
     // 执行查询，操作ResultSet
     JSONArray jaResult = 
-        BaseDAO.query(new ResultSetOperator() {
+        dao.query(new ResultSetOperator() {
             @Override
             protected void run() throws Exception {
                 JSONArray jaResult = new JSONArray();
