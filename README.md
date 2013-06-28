@@ -7,13 +7,13 @@
 * ResultSet结果集操作支持
 * 事务支持
 
-## 依赖包
+## 依赖包 ##
 * commons-lang
 * commons-io
 * log4j
 * org.json
 
-## 初始化工作
+## 初始化工作 ##
 
     // 配置数据库连接，用户名，密码，可以通过如下代码
     // 数据库方言，目前支持，Oracle，MySQL，SQLServer
@@ -30,7 +30,7 @@
     BaseDAO dao = new BaseDAO(); 
     // 默认字段名小写，Oracle会将所有数据库表字段大写，此处强制转换为小写
     dao.setLowerCase(true);
-## 查询结果数据类型
+## 查询结果数据类型 ##
 
     // 查询返回String
     // 返回值为： "Shaun Chyxion"，系列方法有，findInt, findDouble, findObj
@@ -70,7 +70,7 @@
         // 查询语句
         "select id, name, gender from demo_users");
 
-## 插入，更新数据类型
+## 插入，更新数据类型 ##
 
     // 插入JSONObject，Map<String, Object>
     // 创建用户JSONObject

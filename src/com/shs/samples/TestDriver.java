@@ -3,17 +3,17 @@ package com.shs.samples;
 import org.json.JSONArray;
 
 import com.shs.framework.dao.BaseDAO;
-import com.shs.framework.dao.ConnectionManager;
+import com.shs.framework.dao.DbManager;
 import com.shs.framework.dao.BaseDAO.ConnectionOperator;
 import com.shs.framework.dao.BaseDAO.ResultSetOperator;
 
 public class TestDriver {
 	public static void main(String[] args) {
-		ConnectionManager.DIALECT = "oralce";
-		ConnectionManager.DRIVER = "oracle.jdbc.OracleDriver";
-		ConnectionManager.URL = "jdbc:oracle:thin:@chyxion-pad:1521:oracle";
-		ConnectionManager.USER_NAME = "chyxion";
-		ConnectionManager.PASSWORD = "0211";
+		DbManager.DIALECT = "oralce";
+		DbManager.DRIVER = "oracle.jdbc.OracleDriver";
+		DbManager.URL = "jdbc:oracle:thin:@chyxion-pad:1521:oracle";
+		DbManager.USER_NAME = "chyxion";
+		DbManager.PASSWORD = "0211";
 		BaseDAO dao = new BaseDAO();
 		dao.setLowerCase(true);
 		dao.execute(new ConnectionOperator() {

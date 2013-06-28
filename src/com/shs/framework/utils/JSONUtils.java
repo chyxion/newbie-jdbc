@@ -1,7 +1,9 @@
 package com.shs.framework.utils;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +24,6 @@ import org.json.JSONObject;
  * @support: chyxion@163.com
  * @date modified: 
  * @modified by: 
- * @copyright: Shenghang Soft All Right Reserved.
  */
 public class JSONUtils {
 	public static List<Object> toMapList(JSONArray ja) {
@@ -89,16 +90,30 @@ public class JSONUtils {
 	public static JSONArray prepend(JSONArray ja, Object obj) {
 		return ja = concat(new JSONArray().put(obj), ja);
 	}
-	public static JSONObject newJSONObject(File file, String encoding) {
+	public static JSONObject newJSONObject(File file) {
 		try {
 			return new JSONObject(readSource(file));
 		} catch (JSONException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	public static JSONArray newJSONArray(File file, String encoding) {
+	public static JSONObject newJSONObject(InputStream is) {
+		try {
+			return new JSONObject(readSource(is));
+		} catch (JSONException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	public static JSONArray newJSONArray(File file) {
 		try {
 			return new JSONArray(readSource(file));
+		} catch (JSONException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	public static JSONArray newJSONArray(InputStream is) {
+		try {
+			return new JSONArray(readSource(is));
 		} catch (JSONException e) {
 			throw new RuntimeException(e);
 		}
@@ -106,10 +121,17 @@ public class JSONUtils {
 	// 移除注释
 	public static String readSource(File file) {
 		try {
+			return readSource(new FileInputStream(file));
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	public static String readSource(InputStream is) {
+		try {
 			StringBuffer sbContent = new StringBuffer();
 			// 注释行，空白行
 			Pattern p = Pattern.compile("^(\\s*//|\\s*$)");
-			BOMInputStream bis = new BOMInputStream(new FileInputStream(file));
+			BOMInputStream bis = new BOMInputStream(is);
 			ByteOrderMark bom = bis.getBOM();
 			for (String line : IOUtils.readLines(bis, bom == null ? "utf-8" : bom.getCharsetName())) {
 				if (!p.matcher(line).find()) {

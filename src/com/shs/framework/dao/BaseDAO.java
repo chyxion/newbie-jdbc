@@ -41,7 +41,7 @@ public final class BaseDAO {
 	/**
 	 * 数据库特征
 	 */
-	private IDbTrait dbTrait = ConnectionManager.getDbTrait();
+	private IDbTrait dbTrait = DbManager.getDbTrait();
 	public void setDbTrait(IDbTrait dbt) {
 		dbTrait = dbt;
 	}
@@ -53,7 +53,7 @@ public final class BaseDAO {
 	/**
 	 * 默认字符小写
 	 */
-	private boolean lowerCase = false;
+	private boolean lowerCase = DbManager.LOWERCASE;
 	/**
 	 * 启用事件
 	 */
@@ -73,7 +73,7 @@ public final class BaseDAO {
 	 * 获得连接
 	 */
 	public Connection getConnection()  {
-		return ConnectionManager.getConnection();
+		return DbManager.getConnection();
 	}
 
     /**
