@@ -90,7 +90,7 @@ public final class BaseDAO {
 	public <T> T findObj(final String strSQL, final Object ... values)  {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = findObj(strSQL, values);
 			}
 		});
@@ -118,7 +118,7 @@ public final class BaseDAO {
 	 * @
 	 */
 	public List<String> findStrList(Connection dbConnection, String strSQL, Object ... values) {
-		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).findStrList(strSQL, values);
+		return findList(dbConnection, strSQL, values);
 	}
 	/**
 	 * 查询返回List<String>
@@ -128,10 +128,16 @@ public final class BaseDAO {
 	 * @
 	 */
 	public List<String> findStrList(final String strSQL, final Object ... values) {
+		return findList(strSQL, values);
+	}
+	public <T> List<T> findList(Connection dbConnection, String strSQL, final Object ... values) {
+		return new DAOCore(lowerCase, dbConnection, dbTrait, eventHandler).findList(strSQL, values);
+	}
+	public <T> List<T> findList(final String strSQL, final Object ... values) {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run() {
-				result = findStrList(strSQL, values);
+			protected void run()  {
+				result = findList(strSQL, values);
 			}
 		});
 	}
@@ -162,8 +168,8 @@ public final class BaseDAO {
 	public <T> T query(final ResultSetOperator rso, final String strSQL, final Object ... values)  {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
-				result = new DAOCore(lowerCase, dbConnection, dbTrait, event).query(rso, strSQL, values);
+			protected void run() {
+				result = query(rso, strSQL, values);
 			}
 		});
 	}
@@ -206,7 +212,7 @@ public final class BaseDAO {
 	public boolean execute(final String strSQL)  {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = execute(strSQL);
 			}
 		});
@@ -286,7 +292,7 @@ public final class BaseDAO {
 	public void executeBatch(final List<String> listSQLs)  {
 		executeTransaction(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				executeBatch(listSQLs);
 			}
 		});
@@ -337,7 +343,7 @@ public final class BaseDAO {
 	public void executeBatch(final String strSQL, final JSONArray jaValues) {
 		executeTransaction(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				executeBatch(strSQL, jaValues);
 			}
 		});
@@ -460,30 +466,6 @@ public final class BaseDAO {
 			throw new RuntimeException(e);
 		}
 		return mapList;
-	}
-	/**
-	 * 返回表数据行数.
-	 * @param table
-	 * @return 
-	 * @ 
-	 */
-	public int count(final String table)  {
-		return execute(new ConnectionOperator() {
-			@Override
-			public void run()  {
-				result = count(table);
-			}
-		});
-	}
-	/**
-	 * 返回表数据行数
-	 * @param dbConnection
-	 * @param table
-	 * @return
-	 * @
-	 */
-	public int count(Connection dbConnection, String table)  {
-		return findInt("select count(1) from " + table);
 	}
 	/**
 	 * 关闭connection, statement, resultSet
@@ -832,7 +814,7 @@ public final class BaseDAO {
 	public boolean insert(final String table, final JSONObject joModel) {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = insert(table, joModel);
 			}
 		});
@@ -854,7 +836,7 @@ public final class BaseDAO {
 	public void insert(final String table, final JSONArray jaModels) {
 		executeTransaction(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				insert(table, jaModels);
 			}
 		});
@@ -870,7 +852,7 @@ public final class BaseDAO {
 	public int update(final String table, final JSONObject joModel, final JSONObject where) {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = update(table, joModel, where);
 			}
 		});
@@ -896,7 +878,7 @@ public final class BaseDAO {
 	public int update(final String strSQL, final Object ... values) {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = update(strSQL, values);
 			}
 		});
@@ -1041,7 +1023,7 @@ public final class BaseDAO {
 			final Object ... values)  {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = findMapListPage(lc, orderCol, direction, start, limit, strSQL, values);
 			}
 		});
@@ -1067,7 +1049,7 @@ public final class BaseDAO {
 			final Object ... values)  {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = findMapList(lc, strSQL, values);
 			}
 		});
@@ -1116,7 +1098,7 @@ public final class BaseDAO {
 			final Object ... values) {
 		return execute(new ConnectionOperator() {
 			@Override
-			public void run()  {
+			protected void run()  {
 				result = findMap(lc, strSQL, values);
 			}
 		});
@@ -1211,14 +1193,14 @@ public final class BaseDAO {
 		 */
 		public List<String> findStrList(String strSQL,
 				Object... values)  {
-			return findObjList(strSQL, values);
+			return findList(strSQL, values);
 		}
 
-		public <T> List<T> findObjList(String strSQL,
-				Object... values)  {
+		public <T> List<T> findList(String strSQL,
+				Object... values) {
 			return query(new ResultSetOperator() {
 				@Override
-				public void run()  {
+				protected void run()  {
 					List<T> l = new LinkedList<T>();
 					try {
 						while (resultSet.next())
@@ -1243,7 +1225,7 @@ public final class BaseDAO {
 		public <T> T findObj(String strSQL, Object... values)  {
 			return query(new ResultSetOperator() {
 				@Override
-				public void run()  {
+				protected void run()  {
 					try {
 						if (resultSet.next())
 							result = resultSet.getObject(1);
@@ -1339,6 +1321,20 @@ public final class BaseDAO {
 			Statement statement = null;
 			try {
 				statement = dbConnection.createStatement();
+				// 前置事件
+				Event e = null;
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_EXEC_BATCH)
+						.setSQL(StringUtils.join(listSQLs, ";"));
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
+					}
+				}
 				int i = 0;
 				for (String sql : listSQLs) {
 					statement.addBatch(sql);
@@ -1348,6 +1344,9 @@ public final class BaseDAO {
 					}
 				}
 				statement.executeBatch();
+				if (event != null) {
+					event.after(e);
+				}
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -1380,42 +1379,47 @@ public final class BaseDAO {
 		 */
 		public void executeBatch(String strSQL, JSONArray jaValues)
 				 {
-			PreparedStatement preparedStatement = null;
+			PreparedStatement statement = null;
 			try {
 				logger.debug("execute batch[" + strSQL + "]");
-				preparedStatement = dbConnection.prepareStatement(strSQL);
-				for (int i = 0; i < jaValues.length(); ++i) {
-					setValues(preparedStatement, jaValues
-							.getJSONArray(i));
-					logger.debug(jaValues.getJSONArray(i));
-					preparedStatement.addBatch();
-					if (i % batchSize == 0 && i != 0) {
-						preparedStatement.executeBatch();
+				statement = dbConnection.prepareStatement(strSQL);
+				Event e = null;
+				if (event != null) {
+					e = new Event()
+						.setConnection(dbConnection)
+						.setStatement(statement)
+						.setType(Event.TYPE_EXEC_BATCH)
+						.setSQL(strSQL)
+						.setValues(new String[]{jaValues.toString()});
+					if (event.before(e)) {
+						statement = e.getStatement();
+					} else {
+						throw new InterruptException(e.getErrorMsg());
 					}
 				}
-				preparedStatement.executeBatch();
+				for (int i = 0; i < jaValues.length(); ++i) {
+					setValues(statement, jaValues
+							.getJSONArray(i));
+					logger.debug(jaValues.getJSONArray(i));
+					statement.addBatch();
+					if (i % batchSize == 0 && i != 0) {
+						statement.executeBatch();
+					}
+				}
+				statement.executeBatch();
+				if (event != null) {
+					event.after(e);
+				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			} finally {
-				close(preparedStatement);
+				close(statement);
 			}
 		}
 
 		public void insert(String table, JSONArray jaFields, JSONArray jaValues) {
 			executeBatch(dbTrait.genInsertSQL(table, jaFields), jaValues);
 		}
-
-		/**
-		 * 返回表数据行数
-		 * @param dbConnection
-		 * @param table
-		 * @return
-		 * @
-		 */
-		public int count(String table) {
-			return findInt("select count(1) from " + table);
-		}
-
 
 		/**
 		 * 有事务的保存,
