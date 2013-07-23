@@ -2,13 +2,37 @@ package com.shs.framework.dao;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.List;
-
+/**
+ * @version 0.1
+ * @author chyxion
+ * @describe: 数据库操作事件
+ * @date created: Jul 23, 2013 10:28:58 AM
+ * @support: chyxion@163.com
+ * @date modified: 
+ * @modified by:
+ */
 public class Event {
+	/**
+	 * 查询
+	 */
 	public final static int TYPE_QUERY = 0;
+	/**
+	 * 插入
+	 */
 	public final static int TYPE_INSERT = 1;
+	/**
+	 * 更新
+	 */
 	public final static int TYPE_UPDATE = 2;
+	/**
+	 * 执行
+	 */
 	public final static int TYPE_EXEC = 3;
+	/**
+	 * 执行批处理
+	 */
 	public final static int TYPE_EXEC_BATCH = 3;
+
 	private Connection dbConnection;
 	private Statement statement;
 	private int type;
@@ -23,6 +47,11 @@ public class Event {
 		this.dbConnection = dbConnection;
 		return this;
 	}
+	/**
+	 * 有可能传入的是PreparedStatement，这里做动态转换
+	 * @param <T>
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public <T> T getStatement() {
 		return (T) statement;

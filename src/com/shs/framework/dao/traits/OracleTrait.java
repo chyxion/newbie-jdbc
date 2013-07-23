@@ -16,7 +16,6 @@ import org.json.JSONObject;
  * @support: chyxion@163.com
  * @date modified: 
  * @modified by: 
- * @copyright: Shenghang Soft All Right Reserved.
  */
 public class OracleTrait extends IDbTrait {
 	/**

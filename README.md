@@ -17,15 +17,15 @@
 
     // 配置数据库连接，用户名，密码，可以通过如下代码
     // 数据库方言，目前支持，Oracle，MySQL，SQLServer
-    ConnectionManager.DIALECT = "oralce";
+    DbManager.DIALECT = "oralce";
     // JDBC连接驱动
-    ConnectionManager.DRIVER = "oracle.jdbc.OracleDriver";
+    DbManager.DRIVER = "oracle.jdbc.OracleDriver";
     // 连接URL
-    ConnectionManager.URL = "jdbc:oracle:thin:@chyxion-pad:1521:oracle";
+    DbManager.URL = "jdbc:oracle:thin:@chyxion-pad:1521:oracle";
     // 连接用户名
-    ConnectionManager.USER_NAME = "chyxion";
+    DbManager.USER_NAME = "chyxion";
     // 连接密码，你的密码
-    ConnectionManager.PASSWORD = "secret";
+    DbManager.PASSWORD = "secret";
     // 实例化DAO
     BaseDAO dao = new BaseDAO(); 
     // 默认字段名小写，Oracle会将所有数据库表字段大写，此处强制转换为小写

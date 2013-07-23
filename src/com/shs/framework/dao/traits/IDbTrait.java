@@ -17,9 +17,11 @@ import org.json.JSONObject;
  * @support: chyxion@163.com
  * @date modified: 
  * @modified by: 
- * @copyright: Shenghang Soft All Right Reserved.
  */
 public abstract class IDbTrait {
+	/**
+	 * 分页时候行号的Label
+	 */
 	public static final String COLUMN_ROW_NUMBER = "row_number__";
     public abstract StatementWrapper pageStatement(
     		String orderCol, 
@@ -28,7 +30,13 @@ public abstract class IDbTrait {
     		int limit,
     		String strSQL, 
     		Object ... values);
-    
+    /**
+     * 生成插入SQL
+     * @param table
+     * @param joModel
+     * @param values
+     * @return
+     */
 	public String genInsertSQL(String table, JSONObject joModel, List<Object> values)  {
 		// 获得对象属性名称
 		String[] columns = JSONObject.getNames(joModel);
@@ -78,18 +86,25 @@ public abstract class IDbTrait {
 		sbSQL.setLength(sbSQL.length() - 2);
 		return sbSQL.toString();
 	}
+	/**
+	 * 生成and条件，如：{"a": 1, "b": 2} => 
+	 * 	return a = ? and b = ?
+	 * 	outValues == [1, 2]
+	 * @param joWhere
+	 * @param outValues
+	 * @return
+	 */
 	public String genWhereEqAnd(JSONObject joWhere, List<Object> outValues) {
 		StringBuffer sbSQL = new StringBuffer();
-		String[] columns = JSONObject.getNames(joWhere);
 		try {
-			for (String column : columns) {
-				sbSQL.append(column).append(" = ? and ");
-				outValues.add(joWhere.get(column));
+			for (String name : JSONObject.getNames(joWhere)) {
+				sbSQL.append(name).append(" = ? and ");
+				outValues.add(joWhere.get(name));
 			}
 		} catch (JSONException e) {
 			throw new RuntimeException(e);
 		}
-		sbSQL.setLength(sbSQL.length() - 5); // 去掉and
+		sbSQL.setLength(sbSQL.length() - 5); // 去掉最后一个and
 		return sbSQL.toString();
 	}
 }

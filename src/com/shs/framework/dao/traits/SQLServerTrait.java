@@ -43,10 +43,6 @@ public class SQLServerTrait extends IDbTrait {
 		} else {
 			values = ArrayUtils.add(values, start);
 		}
-//		sbSQL.append("order by ")
-//			.append(orderCol)
-//			.append(" ")
-//			.append(direction);
 		return new StatementWrapper(sbSQL.toString(), values);
 	}
 	@Override
