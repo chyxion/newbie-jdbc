@@ -59,6 +59,7 @@ public class OracleTrait extends IDbTrait {
 			.append(" >= ? "); 
 		if (limit > 0) {
 			sbSQL.append(" AND ")
+			.append(COLUMN_ROW_NUMBER)
 			.append(" <= ? ");
 			values = ArrayUtils.addAll(values, new Object[]{start, start + limit});
 		} else {
