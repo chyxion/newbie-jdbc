@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
@@ -46,31 +47,22 @@ class DAOCore implements BasicDAO {
 	/**
 	 * {@inheritDoc}
 	 */
-	public <T> List<T> listValue(String strSQL, Object... values) {
-		return query(new Ro<List<T>>() {
+	public <T> List<T> listValue(String sql, Object... values) {
+		return list(new Ro<T>() {
 			@SuppressWarnings("unchecked")
-			public List<T> run(ResultSet rs)  {
-				List<T> result = new LinkedList<T>();
-				try {
-					while (rs.next()) {
-						result.add((T) rs.getObject(1));
-					}
-				} 
-				catch (SQLException e) {
-					throw new RuntimeException(e);
-				}
-				return result;
+			public T exec(ResultSet rs) throws SQLException {
+				return (T) rs.getObject(1);
 			}
-		}, strSQL, values);
+		}, sql, values);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public <T> T findValue(String sql, Object... values) {
-		return findOne(new ResultSetReader<T>() {
+		return findOne(new Ro<T>() {
 			@SuppressWarnings("unchecked")
-			public T read(ResultSet rs) throws SQLException {
+			public T exec(ResultSet rs) throws SQLException {
 				return (T) rs.getObject(1);
 			}
 		}, sql, values);
@@ -86,7 +78,7 @@ class DAOCore implements BasicDAO {
 			statement = prepareStatement(
 				conn, strSQL, Arrays.asList(values));
 			rs = statement.executeQuery();
-			return rso.run(rs);
+			return rso.exec(rs);
 		} 
 		catch (Throwable e) {
 			log.error("Query Error Caused", e);
@@ -181,9 +173,21 @@ class DAOCore implements BasicDAO {
 	 */
 	public int insert(String table, 
 			List<String> cols, 
-			Collection<List<?>> jaValues, 
+			Collection<List<?>> values, 
 			int batchSize) {
-		return executeBatch(genInsertSQL(table, cols), jaValues, batchSize);
+		return executeBatch(genInsertSQL(table, cols), values, batchSize);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public int insert(String table, Map<String, ?> data) {
+		Set<String> cols = data.keySet();
+		List<Object> values = new LinkedList<Object>();
+		for (String col : cols) {
+			values.add(data.get(col));
+		}
+		return update(genInsertSQL(table, cols), values);
 	}
 
 	/**
@@ -211,21 +215,11 @@ class DAOCore implements BasicDAO {
 	public List<Map<String, Object>> listMap(
 			final String sql,
 			final Object... values) {
-		PreparedStatement statement = null;
-		ResultSet resultSet = null;
-		try {
-			statement = prepareStatement(conn, 
-				sql, Arrays.asList(values));
-			resultSet = statement.executeQuery();
-			return getMapList(resultSet);
-		}
-		catch (SQLException e) {
-			log.error("List Map SQL [{}] Values [{}] Error Caused", sql, values);
-			throw new RuntimeException(e);
-		}
-		finally {
-			close(statement, resultSet);
-		}
+		return list(new Ro<Map<String, Object>>() {
+			public Map<String, Object> exec(ResultSet rs) throws SQLException {
+				return getMap(rs);
+			}
+		}, sql, values);
 	}
 
 	/**
@@ -260,8 +254,8 @@ class DAOCore implements BasicDAO {
 	 */
 	public Map<String, Object> findMap(
 			String sql, Object... values) {
-		return findOne(new ResultSetReader<Map<String, Object>>() {
-			public Map<String, Object> read(ResultSet rs) {
+		return findOne(new Ro<Map<String, Object>>() {
+			public Map<String, Object> exec(ResultSet rs) {
 				return getMap(rs);
 			}
 		}, sql, values);
@@ -306,14 +300,14 @@ class DAOCore implements BasicDAO {
 
 	/**
 	 * get map list from result set
-	 * @param resultSet
+	 * @param rs
 	 * @return
 	 */
-	public List<Map<String, Object>> getMapList(ResultSet resultSet) {
+	public List<Map<String, Object>> getMapList(ResultSet rs) {
 		List<Map<String, Object>> mapList = new LinkedList<Map<String, Object>>();
 		try {
-			while (resultSet.next()) {
-				mapList.add(getMap(resultSet));
+			while (rs.next()) {
+				mapList.add(getMap(rs));
 			}
 		} 
 		catch (SQLException e) {
@@ -578,7 +572,7 @@ class DAOCore implements BasicDAO {
 		return sqlRtn;
 	}
 
-	public String genInsertSQL(String table, List<String> cols)  {
+	public String genInsertSQL(String table, Collection<String> cols)  {
 		String[] vh = new String[cols.size()];
 		Arrays.fill(vh, "?");
 		return new StringBuffer("inser into ")
@@ -598,14 +592,14 @@ class DAOCore implements BasicDAO {
 		return result;
 	}
 	
-	private <T> T findOne(final ResultSetReader<T> reader, 
+	public <T> T findOne(final Ro<T> ro, 
 			final String strSQL, Object... values)  {
 		return query(new Ro<T>() {
-			public T run(ResultSet rs)  {
+			public T exec(ResultSet rs)  {
 				try {
 					T result = null;
 					if (rs.next()) {
-						result = reader.read(rs);
+						result = ro.exec(rs);
 					}
 					if (rs.next()) {
 						throw new IllegalStateException(
@@ -622,7 +616,21 @@ class DAOCore implements BasicDAO {
 		}, strSQL, values);
 	}
 	
-	private static interface ResultSetReader<T> {
-		T read(ResultSet rs) throws SQLException;
+	public <T> List<T> list(
+		final Ro<T> ro, String sql, Object... args) {
+		return query(new Ro<List<T>>() {
+			public List<T> exec(ResultSet rs)  {
+				List<T> result = new LinkedList<T>();
+				try {
+					while (rs.next()) {
+						result.add(ro.exec(rs));
+					}
+				} 
+				catch (SQLException e) {
+					throw new RuntimeException(e);
+				}
+				return result;
+			}
+		}, sql, args);
 	}
 }

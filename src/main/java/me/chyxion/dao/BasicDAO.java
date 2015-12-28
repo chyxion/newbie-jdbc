@@ -29,6 +29,22 @@ interface BasicDAO {
 	<T> T findValue(String sql, Object... args); 
 	
 	/**
+	 * @param ro
+	 * @param sql
+	 * @param args
+	 * @return
+	 */
+	<T> T findOne(Ro<T> ro, String sql, Object... args); 
+	
+	/**
+	 * @param ro
+	 * @param sql
+	 * @param args
+	 * @return
+	 */
+	<T> List<T> list(Ro<T> ro, String sql, Object... args); 
+	
+	/**
 	 * query
 	 * @param rso
 	 * @param sql
@@ -76,6 +92,13 @@ interface BasicDAO {
 	 * @return
 	 */
 	int insert(String table, List<String> cols, Collection<List<?>> args, int batchSize); 
+
+	/**
+	 * @param table
+	 * @param data
+	 * @return
+	 */
+	int insert(String table, Map<String, ?> data); 
 	
 	/**
 	 * update
