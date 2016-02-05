@@ -1,25 +1,20 @@
 package me.chyxion.dao;
 
 import org.junit.Test;
-
-import com.alibaba.druid.pool.DruidDataSource;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSourceFactory;
-
 import me.chyxion.dao.Ro;
 import me.chyxion.dao.Co;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+
+import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import javax.sql.DataSource;
-
+import java.util.HashMap;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import me.chyxion.dao.BaseDAO;
 import me.chyxion.dao.BaseDAOSupport;
+import com.alibaba.druid.pool.DruidDataSource;
 
 public class TestDriver {
 	DruidDataSource ds = null;
@@ -41,6 +36,9 @@ public class TestDriver {
 		dao = new BaseDAOSupport(ds);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	protected void finalize() throws Throwable {
 		ds.close();
 	}
@@ -72,5 +70,6 @@ public class TestDriver {
 		}, "select name from demo_user");
 		System.err.println(names);
 		System.err.println(dao.findValue("select count(1) from demo_user"));
+		System.err.println(dao.listMapPage(Arrays.asList(new Order("name", Order.DESC)), 0, 1, "select * from demo_user"));
 	}
 }

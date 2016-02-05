@@ -20,15 +20,16 @@ import org.slf4j.LoggerFactory;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import org.slf4j.helpers.MessageFormatter;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.StringUtils;
+
+import me.chyxion.dao.po.SqlAndArgs;
 import me.chyxion.dao.traits.AbstractDbTrait;
+import me.chyxion.dao.utils.StringUtils;
 
 /**
  * @version 0.0.1
  * @since 0.0.1
- * @author Shaun Chyxion <br />
- * chyxion@163.com <br />
+ * @author Shaun Chyxion <br>
+ * chyxion@163.com <br>
  * Dec 20, 2015 5:28:00 PM
  */
 class BasiceDAOSupport implements BasicDAO {
@@ -200,17 +201,18 @@ class BasiceDAOSupport implements BasicDAO {
 	public List<Map<String, Object>> listMapPage(
 			List<Order> orders, int start, 
 			int limit, String sql, 
-			Object... values) {
-		Pair<String, Collection<?>> pair = 
+			Object... args) {
+		// conn.getMetaData();
+		SqlAndArgs pair = 
 				dbTrait.pageStatement(
 					orders, start, limit, 
-					sql, Arrays.asList(values));
+					sql, Arrays.asList(args));
 		return query(new Ro<List<Map<String, Object>>>() {
 			public List<Map<String, Object>> exec(ResultSet rs)
 					throws SQLException {
 				return getMapList(rs);
 			}
-		}, pair.getKey(), pair.getValue());
+		}, pair.getSql(), pair.getArgs());
 	}
 
 	/**
@@ -519,7 +521,7 @@ class BasiceDAOSupport implements BasicDAO {
 			argsOut.addAll(listValues);
 			String[] vh = new String[listValues.size()];
 			Arrays.fill(vh, "?");
-			sqlRtn = StringUtils.join(vh, ", ");
+			sqlRtn = StringUtils.join(Arrays.asList(vh), ", ");
 		} 
 		else {
 			argsOut.add(arg);
@@ -536,7 +538,7 @@ class BasiceDAOSupport implements BasicDAO {
 			.append(" (")
 			.append(StringUtils.join(cols, ", "))
 			.append(") values (")
-			.append(StringUtils.join(vh, ", "))
+			.append(StringUtils.join(Arrays.asList(vh), ", "))
 			.append(")").toString();
 	}
 	

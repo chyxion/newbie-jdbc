@@ -2,18 +2,15 @@ package me.chyxion.dao.traits;
 
 import java.util.Collection;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import me.chyxion.dao.Order;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import me.chyxion.dao.po.SqlAndArgs;
+import me.chyxion.dao.utils.StringUtils;
 
 /**
  * @version 0.0.1
  * @since 0.0.1
- * @author Shaun Chyxion <br />
- * chyxion@163.com <br />
+ * @author Shaun Chyxion <br>
+ * chyxion@163.com <br>
  * Dec 10, 2015 10:29:47 PM
  */
 public class OracleTrait extends AbstractDbTrait {
@@ -32,16 +29,16 @@ public class OracleTrait extends AbstractDbTrait {
 	 * @param start
 	 * @param limit
 	 * @param sql
-	 * @param values
+	 * @param args
 	 * @return
 	 */
 	@Override
-	public Pair<String, Collection<? extends Object>> pageStatement(
+	public SqlAndArgs pageStatement(
 			Collection<Order> orders,
 			int start, 
 			int limit,
 			String sql, 
-			Collection<? super Object> values) {
+			Collection<? super Object> args) {
 		int indexFrom = StringUtils.indexOfIgnoreCase(sql, " from ");
 		
 		StringBuilder sbSql = 
@@ -55,14 +52,13 @@ public class OracleTrait extends AbstractDbTrait {
 			.append(") where ")
 			.append(COLUMN_ROW_NUMBER)
 			.append(" >= ? "); 
-		values.add(start);
+		args.add(start);
 		if (limit > 0) {
 			sbSql.append(" and ")
 			.append(COLUMN_ROW_NUMBER)
 			.append(" < ? ");
-			values.add(start + limit);
+			args.add(start + limit);
 		} 
-		return new ImmutablePair<String, 
-			Collection<? extends Object>>(sbSql.toString(), values);
+		return new SqlAndArgs(sbSql.toString(), args);
 	}
 }

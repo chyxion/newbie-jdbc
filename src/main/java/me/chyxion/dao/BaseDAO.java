@@ -8,8 +8,8 @@ import java.util.Collection;
 /**
  * @version 0.0.1
  * @since 0.0.1 
- * @author Shaun Chyxion <br />
- * chyxion@163.com <br />
+ * @author Shaun Chyxion <br>
+ * chyxion@163.com <br>
  * Mar 28, 2012 2:30:19 PM
  */
 public interface BaseDAO extends BasicDAO {
