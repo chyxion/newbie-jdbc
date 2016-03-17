@@ -58,7 +58,9 @@ public class TestDriver {
 
 		List<String> nn = dao.execute(new Co<List<String>>() {
 			@Override
-			protected List<String> run() {
+			protected List<String> run() throws SQLException {
+				String url = conn.getMetaData().getURL();
+				System.err.println(url);
 				return null;
 			}
 		});
@@ -70,6 +72,6 @@ public class TestDriver {
 		}, "select name from demo_user");
 		System.err.println(names);
 		System.err.println(dao.findValue("select count(1) from demo_user"));
-		System.err.println(dao.listMapPage(Arrays.asList(new Order("name", Order.DESC)), 0, 1, "select * from demo_user"));
+		System.err.println(dao.listMapPage("select * from demo_user", Arrays.asList(new Order("name", Order.DESC)), 0, 1));
 	}
 }

@@ -1,4 +1,4 @@
-package me.chyxion.dao.po;
+package me.chyxion.dao;
 
 import java.util.Collection;
 
@@ -16,7 +16,6 @@ public class SqlAndArgs {
 	 * @param args sql args
 	 */
 	public SqlAndArgs(String sql, Collection<?> args) {
-		super();
 		this.sql = sql;
 		this.args = args;
 	}

@@ -1,9 +1,9 @@
-package me.chyxion.dao.traits;
+package me.chyxion.dao.pagination;
 
 import java.util.Collection;
 
 import me.chyxion.dao.Order;
-import me.chyxion.dao.po.SqlAndArgs;
+import me.chyxion.dao.SqlAndArgs;
 import me.chyxion.dao.utils.StringUtils;
 
 /**
@@ -13,7 +13,7 @@ import me.chyxion.dao.utils.StringUtils;
  * chyxion@163.com <br>
  * Dec 10, 2015 10:29:47 PM
  */
-public class OracleTrait extends AbstractDbTrait {
+public class OracleCompatibleProcessor extends PaginationProcessor {
 
 	/**
 	 * 
@@ -33,7 +33,7 @@ public class OracleTrait extends AbstractDbTrait {
 	 * @return
 	 */
 	@Override
-	public SqlAndArgs pageStatement(
+	public SqlAndArgs processPaginationSqlAndArgs(
 			Collection<Order> orders,
 			int start, 
 			int limit,

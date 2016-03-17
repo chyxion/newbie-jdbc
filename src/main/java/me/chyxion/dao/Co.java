@@ -9,6 +9,6 @@ import java.sql.SQLException;
  * chyxion@163.com <br>
  * Dec 20, 2015 4:53:34 PM
  */
-public abstract class Co<T> extends BasiceDAOSupport {
+public abstract class Co<T> extends BasicDAOSupport {
 	protected abstract T run() throws SQLException;
 }

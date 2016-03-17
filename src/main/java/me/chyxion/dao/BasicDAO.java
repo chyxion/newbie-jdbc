@@ -101,18 +101,18 @@ interface BasicDAO {
 	
 	/**
 	 * list map page
+	 * @param sql sql
 	 * @param orders orders
 	 * @param offset row offset
 	 * @param limit row limit
-	 * @param sql sql
 	 * @param args sql args
 	 * @return query result
 	 */
 	List<Map<String, Object>> listMapPage(
+		String sql, 
 		List<Order> orders, 
 		int offset, 
 		int limit, 
-		String sql, 
 		Object... args);
 	
 	/**

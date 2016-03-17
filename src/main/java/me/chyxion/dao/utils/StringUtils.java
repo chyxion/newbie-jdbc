@@ -46,9 +46,9 @@ public class StringUtils {
     }
 
 	/**
-	 * @param sql
-	 * @param string
-	 * @return
+	 * @param str string
+	 * @param searchStr search string
+	 * @return search string index
 	 */
     public static int indexOfIgnoreCase(String str, String searchStr) {
     	int indexNotFound = -1;

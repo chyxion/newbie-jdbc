@@ -8,6 +8,8 @@ import javax.sql.DataSource;
 import java.util.Collection;
 import java.sql.SQLException;
 import org.slf4j.LoggerFactory;
+import me.chyxion.dao.pagination.PaginationProcessorProvider;
+import me.chyxion.dao.pagination.DefaultPaginationProcessorProvider;
 
 /**
  * @version 0.0.1
@@ -18,18 +20,77 @@ public final class BaseDAOSupport implements BaseDAO {
 	private static final Logger log = 
 		LoggerFactory.getLogger(BaseDAOSupport.class);
 	private DataSource dataSource;
+	private PaginationProcessorProvider paginationProcessorProvider;
+	private ResultSetReader resultSetReader;
 
 	/**
-	 * @param dataSource
+	 * @param dataSource database data source
 	 */
 	public BaseDAOSupport(DataSource dataSource) {
+		this(dataSource, new DefaultPaginationProcessorProvider());
+	}
+
+	/**
+	 * @param dataSource database data source
+	 * @param paginationProcessorProvider pagination processor provider
+	 */
+	public BaseDAOSupport(DataSource dataSource, 
+			PaginationProcessorProvider paginationProcessorProvider) {
 		if (dataSource == null) {
 			throw new IllegalArgumentException(
 				"Data Source Could Not Be Null");
 		}
 		this.dataSource = dataSource;
+
+		if (paginationProcessorProvider == null) {
+			throw new IllegalArgumentException(
+				"Pagination Processor Provider Source Could Not Be Null");
+		}
+		this.paginationProcessorProvider = paginationProcessorProvider;
 	}
 
+	/**
+	 * @return the dataSource
+	 */
+	public DataSource getDataSource() {
+		return dataSource;
+	}
+
+	/**
+	 * @param dataSource the dataSource to set
+	 */
+	public void setDataSource(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
+
+	/**
+	 * @return the paginationProcessorProvider
+	 */
+	public PaginationProcessorProvider getPaginationProcessorProvider() {
+		return paginationProcessorProvider;
+	}
+
+	/**
+	 * @param paginationProcessorProvider the paginationProcessorProvider to set
+	 */
+	public void setPaginationProcessorProvider(
+			PaginationProcessorProvider paginationProcessorProvider) {
+		this.paginationProcessorProvider = paginationProcessorProvider;
+	}
+
+	/**
+	 * @return the resultSetReader
+	 */
+	public ResultSetReader getResultSetReader() {
+		return resultSetReader;
+	}
+
+	/**
+	 * @param resultSetReader the resultSetReader to set
+	 */
+	public void setResultSetReader(ResultSetReader resultSetReader) {
+		this.resultSetReader = resultSetReader;
+	}
 	/**
 	 * {@inheritDoc}
 	 */
@@ -79,10 +140,12 @@ public final class BaseDAOSupport implements BaseDAO {
 		try {
 			conn = getConnection();
             co.conn = conn;
+            co.ppp = paginationProcessorProvider;
+            co.resultSetReader = resultSetReader;
 			return co.run();
 		} 
 		catch (SQLException e) {
-			log.error("Execute Connection Operation Error Caused", e);
+			log.error("Execute Connection Operation Error Caused.", e);
 			throw new IllegalStateException(e);
 		} 
 		finally {
@@ -227,27 +290,27 @@ public final class BaseDAOSupport implements BaseDAO {
 	 */
 	public List<Map<String, Object>> listMapPage(
 		Connection conn, 
+		String sql, 
 		List<Order> orders,
 		int start,
 		int limit,
-		String sql, 
 		final Object ... args) {
-		return bd(conn).listMapPage(orders, start, limit, sql, args);
+		return bd(conn).listMapPage(sql, orders, start, limit, args);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public List<Map<String, Object>> listMapPage(
+		final String sql, 
 		final List<Order> orders,
 		final int start,
 		final int limit,
-		final String sql, 
 		final Object... args) {
 		return execute(new Co<List<Map<String, Object>>>() {
 			@Override
 			protected List<Map<String, Object>> run() {
-				return listMapPage(orders, start, limit, sql, args);
+				return listMapPage(sql, orders, start, limit, args);
 			}
 		});
 	}
@@ -349,7 +412,7 @@ public final class BaseDAOSupport implements BaseDAO {
 		}
 		catch (SQLException e) {
 			throw new IllegalStateException(
-				"Get Connection Error Caused", e);
+				"Get Database Connection Error Caused", e);
 		}
 	}
 
@@ -365,6 +428,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	}
 
 	private BasicDAO bd(Connection conn) {
-		return new BasiceDAOSupport(conn);
+		return new BasicDAOSupport(conn, 
+					paginationProcessorProvider, resultSetReader);
 	}
 }

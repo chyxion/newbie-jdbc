@@ -19,11 +19,10 @@ import java.util.regex.Matcher;
 import org.slf4j.LoggerFactory;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
-import org.slf4j.helpers.MessageFormatter;
-
-import me.chyxion.dao.po.SqlAndArgs;
-import me.chyxion.dao.traits.AbstractDbTrait;
 import me.chyxion.dao.utils.StringUtils;
+import org.slf4j.helpers.MessageFormatter;
+import me.chyxion.dao.pagination.PaginationProcessor;
+import me.chyxion.dao.pagination.PaginationProcessorProvider;
 
 /**
  * @version 0.0.1
@@ -32,18 +31,27 @@ import me.chyxion.dao.utils.StringUtils;
  * chyxion@163.com <br>
  * Dec 20, 2015 5:28:00 PM
  */
-class BasiceDAOSupport implements BasicDAO {
+class BasicDAOSupport implements BasicDAO {
 	private static final Logger log = 
-		LoggerFactory.getLogger(BasiceDAOSupport.class);
+		LoggerFactory.getLogger(BasicDAOSupport.class);
 
-	protected AbstractDbTrait dbTrait;
 	protected Connection conn;
+	protected PaginationProcessorProvider ppp;
+	protected ResultSetReader resultSetReader;
 
-	public BasiceDAOSupport(Connection conn) {
+	/**
+	 * @param conn database connection
+	 * @param ppp pagination processor provider 
+	 */
+	public BasicDAOSupport(Connection conn, 
+			PaginationProcessorProvider ppp,
+			ResultSetReader resultSetReader) {
 		this.conn = conn;
+		this.ppp = ppp;
+		this.resultSetReader = resultSetReader;
 	}
 
-	public BasiceDAOSupport() {}
+	public BasicDAOSupport() {}
 
 	/**
 	 * {@inheritDoc}
@@ -190,7 +198,7 @@ class BasiceDAOSupport implements BasicDAO {
 			final Object... values) {
 		return list(new Ro<Map<String, Object>>() {
 			public Map<String, Object> exec(ResultSet rs) throws SQLException {
-				return getMap(rs);
+				return readMap(rs);
 			}
 		}, sql, values);
 	}
@@ -199,20 +207,17 @@ class BasiceDAOSupport implements BasicDAO {
 	 * {@inheritDoc}
 	 */
 	public List<Map<String, Object>> listMapPage(
-			List<Order> orders, int start, 
-			int limit, String sql, 
+			String sql, List<Order> orders, 
+			int start, int limit, 
 			Object... args) {
-		// conn.getMetaData();
-		SqlAndArgs pair = 
-				dbTrait.pageStatement(
-					orders, start, limit, 
-					sql, Arrays.asList(args));
+		SqlAndArgs sa = ppp.create(conn).processPaginationSqlAndArgs(
+						orders, start, limit, sql, Arrays.asList(args));
 		return query(new Ro<List<Map<String, Object>>>() {
 			public List<Map<String, Object>> exec(ResultSet rs)
 					throws SQLException {
-				return getMapList(rs);
+				return readMapList(rs);
 			}
-		}, pair.getSql(), pair.getArgs());
+		}, sa.getSql(), sa.getArgs());
 	}
 
 	/**
@@ -222,7 +227,7 @@ class BasiceDAOSupport implements BasicDAO {
 			String sql, Object... values) {
 		return findOne(new Ro<Map<String, Object>>() {
 			public Map<String, Object> exec(ResultSet rs) throws SQLException {
-				return getMap(rs);
+				return readMap(rs);
 			}
 		}, sql, values);
 	}
@@ -293,7 +298,7 @@ class BasiceDAOSupport implements BasicDAO {
 					statement.close();
 				}
 				catch (SQLException e) {
-					log.warn("Statement Close Error Cause", e);
+					log.warn("Close Statement Error Cause.", e);
 				}
 			}
 		}
@@ -303,30 +308,21 @@ class BasiceDAOSupport implements BasicDAO {
 		return (PreparedStatement) statement;
 	}
 
-	private Map<String, Object> getMap(ResultSet rs) throws SQLException {
+	private Map<String, Object> readMap(ResultSet rs) throws SQLException {
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumn = metaData.getColumnCount();
 		Map<String, Object> mapRtn = new HashMap<String, Object>();
 		for (int i = 1; i <= numColumn; ++i) {
 			String colName = metaData.getColumnLabel(i);
 			// ignore row number
-			if (colName.equalsIgnoreCase(AbstractDbTrait.COLUMN_ROW_NUMBER)) {
+			if (colName.equalsIgnoreCase(PaginationProcessor.COLUMN_ROW_NUMBER)) {
 				continue;
 			}
 			Object val = null;
 			int type = metaData.getColumnType(i);
-			if (type == Types.CLOB) { // 将CLOB转换为String
-				val = rs.getString(i);
-			} 
-			else if (type == Types.BLOB || 
-				type == Types.BINARY || 
-				type == Types.VARBINARY ||
-				type == Types.LONGVARBINARY) {
-					// File f = new File(FileUtils.getTempDirectory(), UUID.randomUUID().toString());
-					// FileUtils.copyInputStreamToFile(rs.getBinaryStream(i), f);
-					// TODO to bytes
-					// objValue = f;
-			} 
+			if (resultSetReader != null) {
+				val = resultSetReader.read(rs, i, type);
+			}
 			else {
 				val = rs.getObject(i);
 			}
@@ -335,25 +331,20 @@ class BasiceDAOSupport implements BasicDAO {
 		return mapRtn;
 	}
 
-	private List<Map<String, Object>> getMapList(ResultSet rs) {
+	private List<Map<String, Object>> readMapList(ResultSet rs) {
 		List<Map<String, Object>> mapList = 
 			new LinkedList<Map<String, Object>>();
 		try {
 			while (rs.next()) {
-				mapList.add(getMap(rs));
+				mapList.add(readMap(rs));
 			}
 		} 
 		catch (SQLException e) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException(e);
 		}
 		return mapList;
 	}
 
-	/**
-	 * @param ps
-	 * @param index
-	 * @param value
-	 */
 	private void setValue(PreparedStatement ps, int index, Object value) {
 		try {
 			// set null
@@ -364,20 +355,24 @@ class BasiceDAOSupport implements BasicDAO {
 				} 
 	            catch (SQLException e) {
 	            	// ignore
+	            	log.debug("Get Sql Param Type [{}] Error Caused.", index, e);
 	            }
+				log.debug("Prepared Statement Set Index [{}] Null.", index);
 				ps.setNull(index, colType);
-				log.info("Prepared Statement Set Value [{}]#[NULL]#[NULL]", index);
 	        } 
 			else {
-				log.info("Prepared Statement Set Value [{}]#[{}]#[{}]", 
-					index, value.getClass(), value);
+				if (log.isDebugEnabled()) {
+					log.debug("Prepared Statement Set Value [{}]#[{}]#[{}].", 
+						index, value.getClass().getName(), value);
+				}
 				ps.setObject(index, value);
 			}
 		} 
 		catch (Exception e) {
-			log.error("Prepared Statement Set Index [{}] Value [{}] Error Caused", 
+			log.error("Prepared Statement Set Index [{}] Value [{}] Error Caused.", 
 				index, value, e);
-			throw new IllegalStateException(e);
+			throw new IllegalStateException(
+				"Set Sql Param Value Error Caused", e);
 		}
 	}
 
@@ -390,12 +385,12 @@ class BasiceDAOSupport implements BasicDAO {
 		}
 		return ps;
 	}
-
+	
 	/**
-	 * @param sql select name from users where id in (:id)
-	 * @param mapArgs {"id": ["2008110101", "2008110102"]}
-	 * @param outArgs ["2008110101", "2008110102"]
-	 * @return select name from users where id in (?, ?)
+	 * @param sql delete from users where id = :id
+	 * @param mapArgs {id: 2008110101}
+	 * @param outArgs [] -> [2008110101]
+	 * @return delete from users where id = ?
 	 */
     private String buildSql(String sql, Map<String, ?> mapArgs, List<Object> outArgs) {
         String rtnSQL;
@@ -419,12 +414,12 @@ class BasiceDAOSupport implements BasicDAO {
         return rtnSQL;
     }
 
-	/**
-	 * @param sql select name from users where gender = ? and id in (?)
-	 * @param args ["F", ["2008110101", "2008110102"]]
-	 * @param outArgs ["F", "2008110101", "2008110102"]
-	 * @return select name from users where gender = ? and id in (?, ?)
-	 */
+    /**
+     * @param sql delete from users where id in (?)
+     * @param args
+     * @param outArgs
+     * @return
+     */
 	private String buildSql(String sql, Collection<?> args, List<Object> outArgs) {
 		StringBuilder newSql = new StringBuilder();
 		// avoid last ? could not be split
@@ -503,8 +498,8 @@ class BasiceDAOSupport implements BasicDAO {
 	/**
 	 * generate arg holder
 	 * @param arg if v is collection, generate '?, ?...' else ?
-	 * @param argsOut
-	 * @return
+	 * @param argsOut args out
+	 * @return sql ?, ?
 	 */
 	private String genArgHolder(Object arg, List<Object> argsOut) {
 		String sqlRtn = null;
@@ -553,5 +548,4 @@ class BasiceDAOSupport implements BasicDAO {
 	private String fmt(String msg, Object... args) {
 		return MessageFormatter.format(msg, args).getMessage();
 	}
-
 }
