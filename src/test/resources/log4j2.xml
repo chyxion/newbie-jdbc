@@ -10,7 +10,7 @@
 		</Console>
 		<RollingFile name="File" 
             fileName="${log.dir}/log.log"
-			filePattern="${log.dir}/$${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.log">
+			filePattern="${log.dir}/$${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout pattern="${pattern}" />
 			<Policies>
                 <TimeBasedTriggeringPolicy />

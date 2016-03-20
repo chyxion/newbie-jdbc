@@ -1,11 +1,14 @@
-package me.chyxion.dao;
+package me.chyxion.jdbc;
 
 import java.util.Collection;
 
 /**
+ * SQL And Args
  * @version 0.0.1
  * @since 0.0.1
- * @author Shaun Chyxion
+ * @author Shaun Chyxion <br>
+ * chyxion@163.com <br>
+ * Mar 20, 2016 1:43:19 PM
  */
 public class SqlAndArgs {
 	private String sql;

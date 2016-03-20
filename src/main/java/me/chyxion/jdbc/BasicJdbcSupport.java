@@ -1,8 +1,7 @@
-package me.chyxion.dao;
+package me.chyxion.jdbc;
 
 import java.util.Map;
 import java.util.Set;
-import java.sql.Types;
 import java.util.List;
 import java.util.Arrays;
 import org.slf4j.Logger;
@@ -19,10 +18,11 @@ import java.util.regex.Matcher;
 import org.slf4j.LoggerFactory;
 import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
-import me.chyxion.dao.utils.StringUtils;
+
 import org.slf4j.helpers.MessageFormatter;
-import me.chyxion.dao.pagination.PaginationProcessor;
-import me.chyxion.dao.pagination.PaginationProcessorProvider;
+
+import me.chyxion.jdbc.pagination.PaginationProcessor;
+import me.chyxion.jdbc.utils.StringUtils;
 
 /**
  * @version 0.0.1
@@ -31,36 +31,41 @@ import me.chyxion.dao.pagination.PaginationProcessorProvider;
  * chyxion@163.com <br>
  * Dec 20, 2015 5:28:00 PM
  */
-class BasicDAOSupport implements BasicDAO {
+class BasicJdbcSupport implements BasicJdbc {
 	private static final Logger log = 
-		LoggerFactory.getLogger(BasicDAOSupport.class);
+		LoggerFactory.getLogger(BasicJdbcSupport.class);
 
 	protected Connection conn;
-	protected PaginationProcessorProvider ppp;
-	protected ResultSetReader resultSetReader;
+	protected DatabaseTraitResolver databaseTraitResolver;
 
 	/**
 	 * @param conn database connection
 	 * @param ppp pagination processor provider 
 	 */
-	public BasicDAOSupport(Connection conn, 
-			PaginationProcessorProvider ppp,
-			ResultSetReader resultSetReader) {
+	public BasicJdbcSupport(Connection conn, 
+			DatabaseTraitResolver databaseTraitResolver) {
 		this.conn = conn;
-		this.ppp = ppp;
-		this.resultSetReader = resultSetReader;
+		this.databaseTraitResolver = databaseTraitResolver;
 	}
-
-	public BasicDAOSupport() {}
+	
+	/**
+	 * default constructor
+	 */
+	public BasicJdbcSupport() {}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public <T> List<T> listValue(String sql, Object... values) {
+	public <T> List<T> listValue(final String sql, Object... values) {
 		return list(new Ro<T>() {
 			@SuppressWarnings("unchecked")
 			public T exec(ResultSet rs) throws SQLException {
-				return (T) rs.getObject(1);
+				if (rs.getMetaData().getColumnCount() > 1) {
+					throw new IllegalStateException(fmt(
+						"List Values By SQL [{}] Expected One Column To Be Returned, " + 
+						"But Found More Than One", sql));
+				}
+				return (T) databaseTraitResolver.readValue(rs, 1);
 			}
 		}, sql, values);
 	}
@@ -68,11 +73,16 @@ class BasicDAOSupport implements BasicDAO {
 	/**
 	 * {@inheritDoc}
 	 */
-	public <T> T findValue(String sql, Object... values) {
+	public <T> T findValue(final String sql, Object... values) {
 		return findOne(new Ro<T>() {
 			@SuppressWarnings("unchecked")
 			public T exec(ResultSet rs) throws SQLException {
-				return (T) rs.getObject(1);
+				if (rs.getMetaData().getColumnCount() > 1) {
+					throw new IllegalStateException(fmt(
+						"Find Value By SQL [{}] Expected One Column To Be Returned, " + 
+						"But Found More Than One", sql));
+				}
+				return (T) databaseTraitResolver.readValue(rs, 1);
 			}
 		}, sql, values);
 	}
@@ -125,24 +135,30 @@ class BasicDAOSupport implements BasicDAO {
 	/**
 	 * {@inheritDoc}
 	 */
-	public int executeBatch(
-			final String sql, 
+	public int executeBatch(final String sql, 
 			final int batchSize,
-			final List<?>... args) {
+			final Collection<?>... args) {
 		log.info("execute batch[{}]", sql);
 		return exec(new So<Integer>() {
+			
+			/**
+			 * {@inheritDoc}
+			 */
 			public Statement build() throws SQLException {
 				return conn.prepareStatement(sql);
 			}
 
+			/**
+			 * {@inheritDoc}
+			 */
 			public Integer exec(Statement statement) throws SQLException {
 				int result = 0;
 				int i = 0;
-				for (List<?> list : args) {
+				int bs = batchSize > 0 ? batchSize : 16;
+				for (Collection<?> list : args) {
 					setValues(ps(statement), list);
 					ps(statement).addBatch();
-					// TODO test
-					if (++i % batchSize == 0 && i != 0) {
+					if (++i % bs == 0 && i != 0) {
 						result += sum(statement.executeBatch());
 					}
 				}
@@ -155,12 +171,21 @@ class BasicDAOSupport implements BasicDAO {
 	/**
 	 * {@inheritDoc}
 	 */
+	public int executeBatch(final String sql, 
+			final int batchSize,
+			final Collection<Collection<?>> args) {
+		return executeBatch(sql, batchSize, args.toArray(new Collection<?>[0]));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public int insert(String table, 
-			List<String> cols, 
-			Collection<List<?>> values, 
+			Collection<String> cols, 
+			Collection<Collection<?>> values, 
 			int batchSize) {
 		return executeBatch(genInsertSQL(table, cols), 
-			batchSize, values.toArray(new List<?>[0]));
+				batchSize, values.toArray(new Collection<?>[0]));
 	}
 
 	/**
@@ -207,13 +232,13 @@ class BasicDAOSupport implements BasicDAO {
 	 * {@inheritDoc}
 	 */
 	public List<Map<String, Object>> listMapPage(
-			String sql, List<Order> orders, 
+			String sql, Collection<Order> orders, 
 			int start, int limit, 
 			Object... args) {
-		SqlAndArgs sa = ppp.create(conn).processPaginationSqlAndArgs(
-						orders, start, limit, sql, Arrays.asList(args));
+		SqlAndArgs sa = databaseTraitResolver.getPaginationProcessor(conn)
+				.process(orders, start, limit, sql, Arrays.asList(args));
 		return query(new Ro<List<Map<String, Object>>>() {
-			public List<Map<String, Object>> exec(ResultSet rs)
+			public List<Map<String, Object>> exec(ResultSet rs) 
 					throws SQLException {
 				return readMapList(rs);
 			}
@@ -236,27 +261,21 @@ class BasicDAOSupport implements BasicDAO {
 	 * {@inheritDoc}
 	 */
 	public <T> T findOne(final Ro<T> ro, 
-			final String strSQL, Object... values)  {
+			final String sql, Object... values)  {
 		return query(new Ro<T>() {
-			public T exec(ResultSet rs)  {
-				try {
-					T result = null;
-					if (rs.next()) {
-						result = ro.exec(rs);
-					}
-					if (rs.next()) {
-						throw new IllegalStateException(
-							"Find One By SQL [" + strSQL + 
-							"] Expected One Result (Or NULL) To Be Returned, But Found More Than One");
-					}
-					return result;
-				} 
-				catch (SQLException e) {
-					log.error("Find Value Error Caused", e);
-					throw new RuntimeException(e);
+			public T exec(ResultSet rs) throws SQLException {
+				T result = null;
+				if (rs.next()) {
+					result = ro.exec(rs);
 				}
+				if (rs.next()) {
+					throw new IllegalStateException(fmt(
+						"Find One By SQL [{}] Expected One Result (Or NULL) To Be Returned, " + 
+						"But Found More Than One", sql));
+				}
+				return result;
 			}
-		}, strSQL, values);
+		}, sql, values);
 	}
 
 	/**
@@ -265,15 +284,10 @@ class BasicDAOSupport implements BasicDAO {
 	public <T> List<T> list(
 		final Ro<T> ro, String sql, Object... args) {
 		return query(new Ro<List<T>>() {
-			public List<T> exec(ResultSet rs)  {
+			public List<T> exec(ResultSet rs) throws SQLException {
 				List<T> result = new LinkedList<T>();
-				try {
-					while (rs.next()) {
-						result.add(ro.exec(rs));
-					}
-				} 
-				catch (SQLException e) {
-					throw new RuntimeException(e);
+				while (rs.next()) {
+					result.add(ro.exec(rs));
 				}
 				return result;
 			}
@@ -295,6 +309,7 @@ class BasicDAOSupport implements BasicDAO {
 		finally {
 			if (statement != null) {
 				try {
+					log.debug("Close Statement [{}].", statement);
 					statement.close();
 				}
 				catch (SQLException e) {
@@ -315,18 +330,10 @@ class BasicDAOSupport implements BasicDAO {
 		for (int i = 1; i <= numColumn; ++i) {
 			String colName = metaData.getColumnLabel(i);
 			// ignore row number
-			if (colName.equalsIgnoreCase(PaginationProcessor.COLUMN_ROW_NUMBER)) {
-				continue;
+			if (!PaginationProcessor.COLUMN_ROW_NUMBER
+					.equalsIgnoreCase(colName)) {
+				mapRtn.put(colName, databaseTraitResolver.readValue(rs, i));
 			}
-			Object val = null;
-			int type = metaData.getColumnType(i);
-			if (resultSetReader != null) {
-				val = resultSetReader.read(rs, i, type);
-			}
-			else {
-				val = rs.getObject(i);
-			}
-			mapRtn.put(colName, val);
 		}
 		return mapRtn;
 	}
@@ -345,42 +352,12 @@ class BasicDAOSupport implements BasicDAO {
 		return mapList;
 	}
 
-	private void setValue(PreparedStatement ps, int index, Object value) {
-		try {
-			// set null
-			if (value == null) { 
-	            int colType = Types.VARCHAR;
-	            try {
-					colType = ps.getParameterMetaData().getParameterType(index);
-				} 
-	            catch (SQLException e) {
-	            	// ignore
-	            	log.debug("Get Sql Param Type [{}] Error Caused.", index, e);
-	            }
-				log.debug("Prepared Statement Set Index [{}] Null.", index);
-				ps.setNull(index, colType);
-	        } 
-			else {
-				if (log.isDebugEnabled()) {
-					log.debug("Prepared Statement Set Value [{}]#[{}]#[{}].", 
-						index, value.getClass().getName(), value);
-				}
-				ps.setObject(index, value);
-			}
-		} 
-		catch (Exception e) {
-			log.error("Prepared Statement Set Index [{}] Value [{}] Error Caused.", 
-				index, value, e);
-			throw new IllegalStateException(
-				"Set Sql Param Value Error Caused", e);
-		}
-	}
-
-	private PreparedStatement setValues(PreparedStatement ps, List<?> values) {
+	private PreparedStatement setValues(PreparedStatement ps, 
+			Collection<?> values) throws SQLException {
 		if (values != null && !values.isEmpty()) {
 			int i = 0;
 			for (Object value : values) {
-				setValue(ps, ++i, value);
+				databaseTraitResolver.setParam(ps, ++i, value);
 			}
 		}
 		return ps;
@@ -428,7 +405,7 @@ class BasicDAOSupport implements BasicDAO {
 		if (sqlSplitted.length == 1 && args.isEmpty()) {
 			newSql.append(sql);
 		}
-		// expand values for one ?
+		// expand n values for 1 '?'
 		else if (sqlSplitted.length == 2 && !args.isEmpty()) {
 			newSql.append(sqlSplitted[0]);
 			newSql.append(genArgHolder(args, outArgs));
@@ -450,8 +427,7 @@ class BasicDAOSupport implements BasicDAO {
 			throw new IllegalStateException(
 				fmt("SQL [{}] Does Not Match Args [{}]", sql, args));
 		}
-
-		return sql.toString();
+		return newSql.toString();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -462,26 +438,26 @@ class BasicDAOSupport implements BasicDAO {
 		String newSql;
 		List<Object> newArgs = new LinkedList<Object>();
 		if (args.size() == 1) {
-			Object oValues = args.iterator().next();
-			if (oValues != null && oValues.getClass().isArray()) {
+			Object objArgs = args.iterator().next();
+			if (objArgs != null && objArgs.getClass().isArray()) {
 				List<Object> vh = new LinkedList<Object>();
-				for (int i = 0; i < Array.getLength(oValues); ++i) {
-					vh.add(Array.get(oValues, i));
+				for (int i = 0; i < Array.getLength(objArgs); ++i) {
+					vh.add(Array.get(objArgs, i));
 				}
 				newSql = buildSql(sql, vh, newArgs);
 			} 
-			else if (oValues instanceof List<?>) { 
-				newSql = buildSql(sql, (List<?>) oValues, newArgs);
+			else if (objArgs instanceof Collection<?>) { 
+				newSql = buildSql(sql, (Collection<?>) objArgs, newArgs);
 			} 
-			else if (oValues instanceof Map<?, ?>) { 
-				newSql = buildSql(sql, (Map<String, ?>) oValues, newArgs);
+			else if (objArgs instanceof Map<?, ?>) { 
+				newSql = buildSql(sql, (Map<String, ?>) objArgs, newArgs);
             } 
             else { 
 				newSql = sql;
-				newArgs.add(oValues);
+				newArgs.add(objArgs);
 			}
 		} 
-		if (args.size() > 1) {
+		else if (args.size() > 1) {
 			newSql = buildSql(sql, args, newArgs);
 		} 
 		else {

@@ -1,4 +1,4 @@
-package me.chyxion.dao;
+package me.chyxion.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,8 +8,14 @@ import java.sql.SQLException;
  * @since 0.0.1
  * @author Shaun Chyxion <br>
  * chyxion@163.com <br>
- * Dec 20, 2015 4:53:27 PM
+ * Mar 20, 2016 12:05:36 PM
  */
 public interface Ro<T> {
+	
+	/**
+	 * @param rs result set
+	 * @return execute result
+	 * @throws SQLException
+	 */
 	T exec(ResultSet rs) throws SQLException;
 }

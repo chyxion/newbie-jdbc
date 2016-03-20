@@ -1,4 +1,4 @@
-package me.chyxion.dao;
+package me.chyxion.jdbc;
 
 import java.util.Map;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.Collection;
  * @since 0.0.1 
  * @author Shaun Chyxion
  */
-interface BasicDAO {
+interface BasicJdbc {
 
 	/**
 	 * find single result
@@ -31,6 +31,17 @@ interface BasicDAO {
 	 */
 	<T> T findValue(String sql, Object... args); 
 	
+	/**
+	 * list single column values, string or int etc.
+	 * <code>
+	 * 		List<String> names = listValue("select name from users");	
+	 * </code>
+	 * @param sql sql
+	 * @param args sql args
+	 * @return query result
+	 */
+	<T> List<T> listValue(String sql, Object... values);
+
 	/**
 	 * list by sql
 	 * @param ro result set operator
@@ -63,7 +74,16 @@ interface BasicDAO {
 	 * @param batchSize batch size
 	 * @return execute result
 	 */
-	int executeBatch(String sql, int batchSize, List<?>... args); 
+	int executeBatch(String sql, int batchSize, Collection<?>... args); 
+	
+	/**
+	 * @param sql
+	 * @param batchSize
+	 * @param args
+	 * @return
+	 */
+	int executeBatch(String sql, 
+			int batchSize, Collection<Collection<?>> args); 
 	
 	/**
 	 * insert multiple rows
@@ -73,7 +93,10 @@ interface BasicDAO {
 	 * @param batchSize batch size
 	 * @return insert result
 	 */
-	int insert(String table, List<String> cols, Collection<List<?>> args, int batchSize); 
+	int insert(String table, 
+			Collection<String> cols, 
+			Collection<Collection<?>> args, 
+			int batchSize); 
 
 	/**
 	 * insert single row
@@ -110,7 +133,7 @@ interface BasicDAO {
 	 */
 	List<Map<String, Object>> listMapPage(
 		String sql, 
-		List<Order> orders, 
+		Collection<Order> orders, 
 		int offset, 
 		int limit, 
 		Object... args);

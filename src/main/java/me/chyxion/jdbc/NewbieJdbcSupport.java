@@ -1,4 +1,4 @@
-package me.chyxion.dao;
+package me.chyxion.jdbc;
 
 import java.util.Map;
 import java.util.List;
@@ -8,45 +8,44 @@ import javax.sql.DataSource;
 import java.util.Collection;
 import java.sql.SQLException;
 import org.slf4j.LoggerFactory;
-import me.chyxion.dao.pagination.PaginationProcessorProvider;
-import me.chyxion.dao.pagination.DefaultPaginationProcessorProvider;
 
 /**
  * @version 0.0.1
- * @since 0.0.1 
- * @author Shaun Chyxion
+ * @since 0.0.1
+ * @author Shaun Chyxion <br>
+ * chyxion@163.com <br>
+ * Mar 20, 2016 12:20:59 PM
  */
-public final class BaseDAOSupport implements BaseDAO {
+public class NewbieJdbcSupport implements NewbieJdbc {
 	private static final Logger log = 
-		LoggerFactory.getLogger(BaseDAOSupport.class);
+		LoggerFactory.getLogger(NewbieJdbcSupport.class);
 	private DataSource dataSource;
-	private PaginationProcessorProvider paginationProcessorProvider;
-	private ResultSetReader resultSetReader;
+	private DatabaseTraitResolver databaseTraitResolver;
 
 	/**
 	 * @param dataSource database data source
 	 */
-	public BaseDAOSupport(DataSource dataSource) {
-		this(dataSource, new DefaultPaginationProcessorProvider());
+	public NewbieJdbcSupport(DataSource dataSource) {
+		this(dataSource, null);
 	}
 
 	/**
 	 * @param dataSource database data source
 	 * @param paginationProcessorProvider pagination processor provider
 	 */
-	public BaseDAOSupport(DataSource dataSource, 
-			PaginationProcessorProvider paginationProcessorProvider) {
+	public NewbieJdbcSupport(DataSource dataSource, 
+			DatabaseTraitResolver databaseTraitResolver) {
 		if (dataSource == null) {
 			throw new IllegalArgumentException(
 				"Data Source Could Not Be Null");
 		}
 		this.dataSource = dataSource;
 
-		if (paginationProcessorProvider == null) {
-			throw new IllegalArgumentException(
-				"Pagination Processor Provider Source Could Not Be Null");
+		if (databaseTraitResolver == null) {
+			log.info("Database Trait Resolver Is Not Provided, Use Default.");
+			databaseTraitResolver = new DefaultDatabaseTraitResolver();
 		}
-		this.paginationProcessorProvider = paginationProcessorProvider;
+		this.databaseTraitResolver = databaseTraitResolver;
 	}
 
 	/**
@@ -64,34 +63,6 @@ public final class BaseDAOSupport implements BaseDAO {
 	}
 
 	/**
-	 * @return the paginationProcessorProvider
-	 */
-	public PaginationProcessorProvider getPaginationProcessorProvider() {
-		return paginationProcessorProvider;
-	}
-
-	/**
-	 * @param paginationProcessorProvider the paginationProcessorProvider to set
-	 */
-	public void setPaginationProcessorProvider(
-			PaginationProcessorProvider paginationProcessorProvider) {
-		this.paginationProcessorProvider = paginationProcessorProvider;
-	}
-
-	/**
-	 * @return the resultSetReader
-	 */
-	public ResultSetReader getResultSetReader() {
-		return resultSetReader;
-	}
-
-	/**
-	 * @param resultSetReader the resultSetReader to set
-	 */
-	public void setResultSetReader(ResultSetReader resultSetReader) {
-		this.resultSetReader = resultSetReader;
-	}
-	/**
 	 * {@inheritDoc}
 	 */
 	public <T> T findValue(final String sql, final Object ... values) {
@@ -107,15 +78,35 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public <T> T findValue(Connection conn, 
-		String sql, Object ... values) {
+			String sql, Object ... values) {
 		return bd(conn).findValue(sql, values);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
+	public <T> List<T> listValue(final String sql, final Object ... values) {
+		return execute(new Co<List<T>>() {
+			@Override
+			protected List<T> run() {
+				return listValue(sql, values);
+			}
+		});
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public <T> List<T> listValue(Connection conn, 
+			String sql, Object ... values) {
+		return bd(conn).listValue(sql, values);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public <T> T query(final Ro<T> rso, 
-		final String strSQL, final Object ... values) {
+			final String strSQL, final Object ... values) {
 		return execute(new Co<T>() {
 			@Override
 			protected T run() {
@@ -128,7 +119,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public <T> T query(Connection conn, 
-		Ro<T> rso, String sql, Object ... values) {
+			Ro<T> rso, String sql, Object ... values) {
 		return bd(conn).query(rso, sql, values);
 	}
 
@@ -140,8 +131,7 @@ public final class BaseDAOSupport implements BaseDAO {
 		try {
 			conn = getConnection();
             co.conn = conn;
-            co.ppp = paginationProcessorProvider;
-            co.resultSetReader = resultSetReader;
+            co.databaseTraitResolver = databaseTraitResolver;
 			return co.run();
 		} 
 		catch (SQLException e) {
@@ -164,7 +154,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public boolean execute(final String sql, 
-		final Object... args) {
+			final Object... args) {
 		return execute(new Co<Boolean>() {
 			@Override
 			protected Boolean run() {
@@ -182,13 +172,15 @@ public final class BaseDAOSupport implements BaseDAO {
 			conn = getConnection();
 			conn.setAutoCommit(false);
             co.conn = conn;
+            co.databaseTraitResolver = databaseTraitResolver;
 			T t = co.run();
 			conn.commit();
 			return t;
 		} 
-		catch (SQLException e) {
+		catch (Throwable e) {
 			log.error("Execute Transaction Error Caused.", e);
 			try {
+				log.info("Rollback Transaction.");
 				conn.rollback();
 			} 
 			catch (SQLException se) {
@@ -206,7 +198,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public int executeBatch(final String sql, 
-		final int batchSize, final List<?>... args) {
+			final int batchSize, final Collection<?>... args) {
 		return executeTransaction(new Co<Integer>() {
 			@Override
 			protected Integer run() {
@@ -218,8 +210,24 @@ public final class BaseDAOSupport implements BaseDAO {
 	/**
 	 * {@inheritDoc}
 	 */
+	public int executeBatch(String sql, 
+			int batchSize, Collection<Collection<?>> args) {
+		return executeBatch(sql, batchSize, args.toArray(new Collection<?>[0]));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public int executeBatch(Connection conn, 
-		String strSQL, int batchSize, List<?>... args) {
+			String strSQL, int batchSize, Collection<?>... args) {
+		return bd(conn).executeBatch(strSQL, batchSize, args);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public int executeBatch(Connection conn, 
+			String strSQL, int batchSize, Collection<Collection<?>> args) {
 		return bd(conn).executeBatch(strSQL, batchSize, args);
 	}
 
@@ -227,8 +235,8 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public int insert(Connection conn, 
-		String table, List<String> cols, 
-		Collection<List<?>> args, int batchSize) {
+			String table, Collection<String> cols, 
+		Collection<Collection<?>> args, int batchSize) {
 		return bd(conn).insert(table, cols, args, batchSize);
 	}
 
@@ -242,9 +250,11 @@ public final class BaseDAOSupport implements BaseDAO {
 	/**
 	 * {@inheritDoc}
 	 */
-	public int insert(final String table, 
-		final List<String> cols, 
-		final Collection<List<?>> args, final int batchSize) {
+	public int insert(
+			final String table, 
+			final Collection<String> cols, 
+			final Collection<Collection<?>> args, 
+			final int batchSize) {
 		return execute(new Co<Integer>() {
 			@Override
 			protected Integer run() {
@@ -281,7 +291,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public int update(Connection conn, 
-		final String sql, final Object... args) {
+			final String sql, final Object... args) {
 		return bd(conn).update(sql, args);
 	}
 
@@ -289,12 +299,12 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public List<Map<String, Object>> listMapPage(
-		Connection conn, 
-		String sql, 
-		List<Order> orders,
-		int start,
-		int limit,
-		final Object ... args) {
+			Connection conn, 
+			String sql, 
+			Collection<Order> orders,
+			int start,
+			int limit,
+			final Object ... args) {
 		return bd(conn).listMapPage(sql, orders, start, limit, args);
 	}
 
@@ -302,11 +312,11 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public List<Map<String, Object>> listMapPage(
-		final String sql, 
-		final List<Order> orders,
-		final int start,
-		final int limit,
-		final Object... args) {
+			final String sql, 
+			final Collection<Order> orders,
+			final int start,
+			final int limit,
+			final Object... args) {
 		return execute(new Co<List<Map<String, Object>>>() {
 			@Override
 			protected List<Map<String, Object>> run() {
@@ -319,9 +329,9 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public List<Map<String, Object>> listMap(
-		Connection conn, 
-		final String sql, 
-		final Object ... args) {
+			Connection conn, 
+			final String sql, 
+			final Object ... args) {
 		return bd(conn).listMap(sql, args);
 	}
 
@@ -329,7 +339,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public List<Map<String, Object>> listMap(
-		final String sql, final Object... args) {
+			final String sql, final Object... args) {
 		return execute(new Co<List<Map<String, Object>>>() {
 			@Override
 			protected List<Map<String, Object>> run() {
@@ -342,9 +352,9 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public Map<String, Object> findMap(
-		Connection conn, 
-		final String sql, 
-		final Object ... args) {
+			Connection conn, 
+			final String sql, 
+			final Object ... args) {
 		return bd(conn).findMap(sql, args);
 	}
 
@@ -352,8 +362,8 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public Map<String, Object> findMap(
-		final String sql, 
-		final Object ... args) {
+			final String sql, 
+			final Object ... args) {
 		return execute(new Co<Map<String, Object>>() {
 			@Override
 			protected Map<String, Object> run() {
@@ -365,7 +375,8 @@ public final class BaseDAOSupport implements BaseDAO {
 	/**
 	 * {@inheritDoc}
 	 */
-	public <T> T findOne(final Ro<T> ro, final String sql, final Object... args) {
+	public <T> T findOne(final Ro<T> ro, 
+			final String sql, final Object... args) {
 		return execute(new Co<T>() {
 			@Override
 			protected T run() {
@@ -377,8 +388,8 @@ public final class BaseDAOSupport implements BaseDAO {
 	/**
 	 * {@inheritDoc}
 	 */
-	public <T> List<T> list(
-		final Ro<T> ro, final String sql, final Object... args) {
+	public <T> List<T> list(final Ro<T> ro, 
+			final String sql, final Object... args) {
 		return execute(new Co<List<T>>() {
 			@Override
 			protected List<T> run() {
@@ -391,7 +402,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public <T> T findOne(Connection conn, 
-		Ro<T> ro, String sql, Object... args) {
+			Ro<T> ro, String sql, Object... args) {
 		return bd(conn).findOne(ro, sql, args);
 	}
 
@@ -399,7 +410,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	 * {@inheritDoc}
 	 */
 	public <T> List<T> list(Connection conn, 
-		Ro<T> ro, String sql, Object... args) {
+			Ro<T> ro, String sql, Object... args) {
 		return bd(conn).list(ro, sql, args);
 	}
 
@@ -419,6 +430,7 @@ public final class BaseDAOSupport implements BaseDAO {
 	private void close(Connection conn) {
 		if (conn != null) {
 			try {
+				log.debug("Close Database Connection [{}].", conn);
 				conn.close();
 			}
 			catch (SQLException e) {
@@ -427,8 +439,7 @@ public final class BaseDAOSupport implements BaseDAO {
 		}
 	}
 
-	private BasicDAO bd(Connection conn) {
-		return new BasicDAOSupport(conn, 
-					paginationProcessorProvider, resultSetReader);
+	private BasicJdbc bd(Connection conn) {
+		return new BasicJdbcSupport(conn, databaseTraitResolver);
 	}
 }

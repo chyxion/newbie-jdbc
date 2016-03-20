@@ -1,10 +1,13 @@
-package me.chyxion.dao.pagination;
+package me.chyxion.jdbc.pagination;
+
+import org.slf4j.Logger;
 
 import java.util.Collection;
+import org.slf4j.LoggerFactory;
 
-import me.chyxion.dao.Order;
-import me.chyxion.dao.SqlAndArgs;
-import me.chyxion.dao.utils.StringUtils;
+import me.chyxion.jdbc.Order;
+import me.chyxion.jdbc.SqlAndArgs;
+import me.chyxion.jdbc.utils.StringUtils;
 
 /**
  * @version 0.0.1
@@ -13,32 +16,30 @@ import me.chyxion.dao.utils.StringUtils;
  * chyxion@163.com <br>
  * Dec 10, 2015 10:29:47 PM
  */
-public class OracleCompatibleProcessor extends PaginationProcessor {
+public class OracleCompatibleProcessor 
+	implements PaginationProcessor {
+	private static final Logger log = 
+		LoggerFactory.getLogger(OracleCompatibleProcessor.class);
 
 	/**
-	 * 
-		SELECT  *
-		FROM  (SELECT    ROW_NUMBER() OVER ( ORDER BY OrderDate) RowNum, *
-		          FROM      Orders
-		          WHERE     OrderDate >= '1980-01-01') RowConstrainedResult
-		WHERE   RowNum >= 1
+	 	<pre>
+		SELECT * FROM (
+			SELECT ROW_NUMBER() OVER (ORDER BY OrderDate) RowNum, *
+			FROM  Orders
+			WHERE OrderDate >= '1980-01-01') RowConstrainedResult
+		WHERE RowNum >= 1
 		    AND RowNum < 20
 		ORDER BY RowNum
-	 * @param orderCol
-	 * @param direction
-	 * @param start
-	 * @param limit
-	 * @param sql
-	 * @param args
-	 * @return
+		</pre>
+	 * {@inheritDoc}
 	 */
-	@Override
-	public SqlAndArgs processPaginationSqlAndArgs(
+	public SqlAndArgs process(
 			Collection<Order> orders,
 			int start, 
 			int limit,
 			String sql, 
 			Collection<? super Object> args) {
+		log.info("Process Oracle Compatible Pagination Sql [{}].", sql);
 		int indexFrom = StringUtils.indexOfIgnoreCase(sql, " from ");
 		
 		StringBuilder sbSql = 
@@ -54,11 +55,12 @@ public class OracleCompatibleProcessor extends PaginationProcessor {
 			.append(" >= ? "); 
 		args.add(start);
 		if (limit > 0) {
-			sbSql.append(" and ")
+			sbSql.append("and ")
 			.append(COLUMN_ROW_NUMBER)
-			.append(" < ? ");
+			.append(" < ?");
 			args.add(start + limit);
 		} 
+		log.info("Process Pagination Sql Result [{}].", sql);
 		return new SqlAndArgs(sbSql.toString(), args);
 	}
 }

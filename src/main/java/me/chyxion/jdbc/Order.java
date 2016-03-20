@@ -1,6 +1,7 @@
-package me.chyxion.dao;
+package me.chyxion.jdbc;
 
 /**
+ * SQL Order
  * @version 0.0.1
  * @since 0.0.1
  * @author Shaun Chyxion <br>
@@ -10,6 +11,7 @@ package me.chyxion.dao;
 public class Order {
 	public static final String ASC = "asc";
 	public static final String DESC = "desc";
+
 	private String col;
 	private String direction;
 

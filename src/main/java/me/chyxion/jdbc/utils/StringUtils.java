@@ -1,4 +1,4 @@
-package me.chyxion.dao.utils;
+package me.chyxion.jdbc.utils;
 
 import java.util.Iterator;
 import java.util.Collection;

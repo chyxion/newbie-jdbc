@@ -1,4 +1,4 @@
-package me.chyxion.dao;
+package me.chyxion.jdbc;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +12,7 @@ import java.util.Collection;
  * chyxion@163.com <br>
  * Mar 28, 2012 2:30:19 PM
  */
-public interface BaseDAO extends BasicDAO {
+public interface NewbieJdbc extends BasicJdbc {
 
 	/**
 	 * execute connection operator, no transaction
@@ -52,6 +52,18 @@ public interface BaseDAO extends BasicDAO {
 	<T> T findValue(Connection conn, String sql, Object... args); 
 	
 	/**
+	 * list single column values, string or int etc.
+	 * <code>
+	 * 		List<String> names = listValue("select name from users");	
+	 * </code>
+	 * @param conn db connection
+	 * @param sql sql
+	 * @param args sql args
+	 * @return query result
+	 */
+	<T> List<T> listValue(Connection conn, String sql, Object... values);
+
+	/**
 	 * list by sql
 	 * @param conn db connection
 	 * @param ro result set operator
@@ -87,7 +99,19 @@ public interface BaseDAO extends BasicDAO {
 	 * @param batchSize batch size
 	 * @return execute result
 	 */
-	int executeBatch(Connection conn, String sql, int batchSize, List<?>... args); 
+	int executeBatch(Connection conn, 
+			String sql, int batchSize, Collection<?>... args); 
+	
+	/**
+	 * execute batch
+	 * @param conn db connection
+	 * @param sql sql
+	 * @param args args
+	 * @param batchSize batch size
+	 * @return execute result
+	 */
+	int executeBatch(Connection conn, 
+			String sql, int batchSize, Collection<Collection<?>> args); 
 	
 	/**
 	 * insert multiple rows
@@ -98,7 +122,11 @@ public interface BaseDAO extends BasicDAO {
 	 * @param batchSize batch size
 	 * @return insert result
 	 */
-	int insert(Connection conn, String table, List<String> cols, Collection<List<?>> args, int batchSize); 
+	int insert(Connection conn, 
+			String table, 
+			Collection<String> cols, 
+			Collection<Collection<?>> args, 
+			int batchSize); 
 
 	/**
 	 * insert single row
@@ -125,7 +153,8 @@ public interface BaseDAO extends BasicDAO {
 	 * @param args args
 	 * @return query result
 	 */
-	List<Map<String, Object>> listMap(Connection conn, String sql, Object... args); 
+	List<Map<String, Object>> listMap(Connection conn, 
+			String sql, Object... args); 
 	
 	/**
 	 * list map page
@@ -138,12 +167,12 @@ public interface BaseDAO extends BasicDAO {
 	 * @return query result
 	 */
 	List<Map<String, Object>> listMapPage(
-		Connection conn,
-		String sql, 
-		List<Order> orders, 
-		int offset, 
-		int limit, 
-		Object... args);
+			Connection conn,
+			String sql, 
+			Collection<Order> orders, 
+			int offset, 
+			int limit, 
+			Object... args);
 	
 	/**
 	 * find single map

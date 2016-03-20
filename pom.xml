@@ -4,19 +4,18 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
         http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>me.chyxion</groupId>
-    <artifactId>base-dao</artifactId>
+    <artifactId>newbie-jdbc</artifactId>
     <version>0.0.1-RELEASE</version>
-    <name>Base DAO</name>
-    <description>Db Access Object</description>
+    <name>Newbie JDBC</name>
+    <description>Newbie JDBC</description>
+    <url>https://github.com/chyxion/newbie-jdbc</url>
 
-	<properties>
-        <maven.compiler.source>1.5</maven.compiler.source>
-        <maven.compiler.target>1.5</maven.compiler.target>
-        <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-        <slf4j.version>1.7.13</slf4j.version>
-        <log4j.version>2.4.1</log4j.version>
-	</properties>
+    <licenses>
+        <license>
+            <name>The MIT License (MIT)</name>
+            <url>http://mit-license.org</url>
+        </license>
+    </licenses>
 
 	<developers>
 		<developer>
@@ -24,20 +23,35 @@
 			<name>Shaun Chyxion</name>
 			<email>chyxion@163.com</email>
 			<url>http://chyxion.github.io</url>
+            <timezone>+8</timezone>
 		</developer>
 	</developers>
 
+    <scm>
+        <url>https://github.com/chyxion/newbie-jdbc</url>
+        <connection>scm:git:https://github.com/chyxion/newbie-jdbc.git</connection>
+        <developerConnection>scm:git:git@github.com:chyxion/newbie-jdbc.git</developerConnection>
+    </scm>
+
+    <parent>
+        <groupId>me.chyxion</groupId>
+        <artifactId>maven-parent</artifactId>
+        <version>0.0.1-RELEASE</version>
+    </parent>
+
+	<properties>
+        <maven.compiler.source>1.5</maven.compiler.source>
+        <maven.compiler.target>1.5</maven.compiler.target>
+        <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
+	</properties>
+
     <dependencies>
-        <dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>3.1</version>
-		</dependency> 
 		<dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
+            <version>1.7.19</version>
         </dependency>
+
         <!-- Test -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -48,13 +62,13 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j.version}</version>
+            <version>2.4.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
+            <version>2.4.1</version>
             <scope>test</scope>
         </dependency>
 		<dependency>
