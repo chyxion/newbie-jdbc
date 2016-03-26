@@ -15,7 +15,7 @@ public interface Ro<T> {
 	/**
 	 * @param rs result set
 	 * @return execute result
-	 * @throws SQLException
+	 * @throws SQLException sql exception caused
 	 */
 	T exec(ResultSet rs) throws SQLException;
 }

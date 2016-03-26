@@ -16,14 +16,15 @@ public interface So<T> {
 	/**
 	 * build statement
 	 * @return sql statement
-	 * @throws SQLException
+	 * @throws SQLException sql exception caused
 	 */
 	Statement build() throws SQLException;
 	
 	/**
+	 * execute statement
 	 * @param statement sql statement
 	 * @return execute result
-	 * @throws SQLException
+	 * @throws SQLException sql exception caused
 	 */
 	T exec(Statement statement) throws SQLException;
 }

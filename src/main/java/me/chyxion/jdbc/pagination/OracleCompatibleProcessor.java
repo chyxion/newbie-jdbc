@@ -26,9 +26,9 @@ public class OracleCompatibleProcessor
 		SELECT * FROM (
 			SELECT ROW_NUMBER() OVER (ORDER BY OrderDate) RowNum, *
 			FROM  Orders
-			WHERE OrderDate >= '1980-01-01') RowConstrainedResult
-		WHERE RowNum >= 1
-		    AND RowNum < 20
+			WHERE OrderDate &gt;= '1980-01-01') RowConstrainedResult
+		WHERE RowNum &gt;= 1
+		    AND RowNum &lt; 20
 		ORDER BY RowNum
 		</pre>
 	 * {@inheritDoc}

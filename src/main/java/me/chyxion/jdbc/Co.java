@@ -14,7 +14,7 @@ public abstract class Co<T> extends BasicJdbcSupport {
 	
 	/**
 	 * @return execute result
-	 * @throws SQLException
+	 * @throws SQLException sql exception caused
 	 */
 	protected abstract T run() throws SQLException;
 }

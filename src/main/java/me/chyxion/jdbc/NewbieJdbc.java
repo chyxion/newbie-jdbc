@@ -17,6 +17,7 @@ public interface NewbieJdbc extends BasicJdbc {
 	/**
 	 * execute connection operator, no transaction
 	 * @param co connection operator
+	 * @param <T> result type
 	 * @return execute result
 	 */
 	<T> T execute(Co<T> co);
@@ -24,6 +25,7 @@ public interface NewbieJdbc extends BasicJdbc {
 	/**
 	 * execute connection operator with transaction
 	 * @param co connection operator
+	 * @param <T> result type
 	 * @return execute result
 	 */
 	<T> T executeTransaction(Co<T> co);
@@ -35,6 +37,7 @@ public interface NewbieJdbc extends BasicJdbc {
 	 * @param ro result set operator
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> T findOne(Connection conn, Ro<T> ro, String sql, Object... args); 
@@ -47,6 +50,7 @@ public interface NewbieJdbc extends BasicJdbc {
 	 * @param conn db connection
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> T findValue(Connection conn, String sql, Object... args); 
@@ -54,14 +58,15 @@ public interface NewbieJdbc extends BasicJdbc {
 	/**
 	 * list single column values, string or int etc.
 	 * <code>
-	 * 		List<String> names = listValue("select name from users");	
+	 * 		List&lt;String&gt; names = listValue("select name from users");	
 	 * </code>
 	 * @param conn db connection
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
-	<T> List<T> listValue(Connection conn, String sql, Object... values);
+	<T> List<T> listValue(Connection conn, String sql, Object... args);
 
 	/**
 	 * list by sql
@@ -69,6 +74,7 @@ public interface NewbieJdbc extends BasicJdbc {
 	 * @param ro result set operator
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> List<T> list(Connection conn, Ro<T> ro, String sql, Object... args); 
@@ -79,6 +85,7 @@ public interface NewbieJdbc extends BasicJdbc {
 	 * @param ro result set operator
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> T query(Connection conn, Ro<T> ro, String sql, Object... args); 

@@ -16,6 +16,7 @@ interface BasicJdbc {
 	 * @param ro result set operator
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> T findOne(Ro<T> ro, String sql, Object... args); 
@@ -27,6 +28,7 @@ interface BasicJdbc {
 	 * </code>
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> T findValue(String sql, Object... args); 
@@ -34,19 +36,21 @@ interface BasicJdbc {
 	/**
 	 * list single column values, string or int etc.
 	 * <code>
-	 * 		List<String> names = listValue("select name from users");	
+	 * 		List&lt;String&gt; names = listValue("select name from users");	
 	 * </code>
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
-	<T> List<T> listValue(String sql, Object... values);
+	<T> List<T> listValue(String sql, Object... args);
 
 	/**
 	 * list by sql
 	 * @param ro result set operator
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> List<T> list(Ro<T> ro, String sql, Object... args); 
@@ -56,13 +60,15 @@ interface BasicJdbc {
 	 * @param ro result set operator
 	 * @param sql sql
 	 * @param args sql args
+	 * @param <T> result type
 	 * @return query result
 	 */
 	<T> T query(Ro<T> ro, String sql, Object... args); 
 
 	/**
-	 * execute single sql
-	 * @param sql sql args
+	 * execute sql
+	 * @param sql sql
+	 * @param args sql args
 	 * @return execute result
 	 */
 	boolean execute(String sql, Object... args); 
@@ -72,15 +78,16 @@ interface BasicJdbc {
 	 * @param sql sql
 	 * @param args args
 	 * @param batchSize batch size
-	 * @return execute result
+	 * @return effect rows result
 	 */
 	int executeBatch(String sql, int batchSize, Collection<?>... args); 
 	
 	/**
-	 * @param sql
-	 * @param batchSize
-	 * @param args
-	 * @return
+	 * execute batch
+	 * @param sql sql
+	 * @param batchSize batch size
+	 * @param args sql args
+	 * @return effect rows result
 	 */
 	int executeBatch(String sql, 
 			int batchSize, Collection<Collection<?>> args); 
@@ -91,7 +98,7 @@ interface BasicJdbc {
 	 * @param cols column names
 	 * @param args rows data
 	 * @param batchSize batch size
-	 * @return insert result
+	 * @return effect rows result
 	 */
 	int insert(String table, 
 			Collection<String> cols, 
@@ -102,7 +109,7 @@ interface BasicJdbc {
 	 * insert single row
 	 * @param table table
 	 * @param data row data
-	 * @return insert result
+	 * @return effect rows result
 	 */
 	int insert(String table, Map<String, ?> data); 
 	
@@ -110,7 +117,7 @@ interface BasicJdbc {
 	 * update by sql and args
 	 * @param sql sql
 	 * @param args sql args
-	 * @return update result
+	 * @return effect rows result
 	 */
 	int update(String sql, final Object... args); 
 	

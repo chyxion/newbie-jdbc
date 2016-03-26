@@ -27,7 +27,7 @@ public interface CustomResolver {
 	 * @param ps prepared statement 
 	 * @param index param index
 	 * @param param param
-	 * @throws SQLException
+	 * @throws SQLException sql exception caused
 	 */
 	void setParam(PreparedStatement ps, 
 			int index, Object param) throws SQLException;
@@ -37,7 +37,7 @@ public interface CustomResolver {
 	 * @param rs result set
 	 * @param index value index
 	 * @return value
-	 * @throws SQLException
+	 * @throws SQLException sql exception caused
 	 */
 	Object readValue(ResultSet rs, int index) throws SQLException;
 }

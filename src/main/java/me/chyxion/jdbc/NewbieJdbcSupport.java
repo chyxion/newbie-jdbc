@@ -31,7 +31,7 @@ public class NewbieJdbcSupport implements NewbieJdbc {
 
 	/**
 	 * @param dataSource database data source
-	 * @param paginationProcessorProvider pagination processor provider
+	 * @param customResolver custom resolver
 	 */
 	public NewbieJdbcSupport(DataSource dataSource, 
 			CustomResolver customResolver) {

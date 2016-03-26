@@ -19,13 +19,12 @@ public interface PaginationProcessor {
 	String COLUMN_ROW_NUMBER = "row_number__";
 
 	/**
-	 * @param orderCol
-	 * @param direction
-	 * @param offset
-	 * @param limit
-	 * @param sql
-	 * @param args
-	 * @return
+	 * @param orders query result orders
+	 * @param offset row offset
+	 * @param limit row limit
+	 * @param sql sql
+	 * @param args sql args
+	 * @return sql and args object
 	 */
     SqlAndArgs process(
     		Collection<Order> orders,
