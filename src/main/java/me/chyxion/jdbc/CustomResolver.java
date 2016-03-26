@@ -3,17 +3,17 @@ package me.chyxion.jdbc;
 import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import me.chyxion.jdbc.pagination.PaginationProcessor;
-
 import java.sql.PreparedStatement;
+import me.chyxion.jdbc.pagination.PaginationProcessor;
 
 /**
  * @version 0.0.1
  * @since 0.0.1
- * @author Shaun Chyxion
+ * @author Shaun Chyxion <br>
+ * chyxion@163.com <br>
+ * Mar 25, 2016 9:10:57 PM
  */
-public interface DatabaseTraitResolver {
+public interface CustomResolver {
 	
 	/**
 	 * get pagination processor 

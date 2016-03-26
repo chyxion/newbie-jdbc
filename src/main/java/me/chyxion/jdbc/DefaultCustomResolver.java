@@ -1,27 +1,26 @@
 package me.chyxion.jdbc;
 
+import java.sql.Types;
 import org.slf4j.Logger;
 import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Types;
-
 import org.slf4j.LoggerFactory;
-
-import me.chyxion.jdbc.pagination.MySQLCompatiblePaginationProcessor;
-import me.chyxion.jdbc.pagination.OracleCompatibleProcessor;
-import me.chyxion.jdbc.pagination.PaginationProcessor;
-
 import java.sql.PreparedStatement;
+import me.chyxion.jdbc.pagination.PaginationProcessor;
+import me.chyxion.jdbc.pagination.OracleCompatibleProcessor;
+import me.chyxion.jdbc.pagination.MySQLCompatiblePaginationProcessor;
 
 /**
  * @version 0.0.1
  * @since 0.0.1
- * @author Shaun Chyxion
+ * @author Shaun Chyxion <br>
+ * chyxion@163.com <br>
+ * Mar 25, 2016 9:11:12 PM
  */
-class DefaultDatabaseTraitResolver implements DatabaseTraitResolver {
+class DefaultCustomResolver implements CustomResolver {
 	private static final Logger log = 
-		LoggerFactory.getLogger(DefaultDatabaseTraitResolver.class);
+		LoggerFactory.getLogger(DefaultCustomResolver.class);
 	private PaginationProcessor mySQLCompatiblePaginationProcessor = 
 		new MySQLCompatiblePaginationProcessor();
 	private PaginationProcessor oracleCompatibleProcessor = 
@@ -36,7 +35,8 @@ class DefaultDatabaseTraitResolver implements DatabaseTraitResolver {
 			jdbcUrl = conn.getMetaData().getURL();
 		}
 		catch (SQLException e) {
-			throw new IllegalStateException("Get Connection URL Error Caused", e);
+			throw new IllegalStateException(
+				"Get Connection URL Error Caused", e);
 		}
 		log.debug("Create Pagination Processor Of JDBC URL [{}].", jdbcUrl);
         if (jdbcUrl.startsWith("jdbc:mysql:") || 

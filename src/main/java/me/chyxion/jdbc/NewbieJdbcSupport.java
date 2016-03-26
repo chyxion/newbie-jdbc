@@ -20,7 +20,7 @@ public class NewbieJdbcSupport implements NewbieJdbc {
 	private static final Logger log = 
 		LoggerFactory.getLogger(NewbieJdbcSupport.class);
 	private DataSource dataSource;
-	private DatabaseTraitResolver databaseTraitResolver;
+	private CustomResolver customResolver;
 
 	/**
 	 * @param dataSource database data source
@@ -34,18 +34,18 @@ public class NewbieJdbcSupport implements NewbieJdbc {
 	 * @param paginationProcessorProvider pagination processor provider
 	 */
 	public NewbieJdbcSupport(DataSource dataSource, 
-			DatabaseTraitResolver databaseTraitResolver) {
+			CustomResolver customResolver) {
 		if (dataSource == null) {
 			throw new IllegalArgumentException(
 				"Data Source Could Not Be Null");
 		}
 		this.dataSource = dataSource;
 
-		if (databaseTraitResolver == null) {
-			log.info("Database Trait Resolver Is Not Provided, Use Default.");
-			databaseTraitResolver = new DefaultDatabaseTraitResolver();
+		if (customResolver == null) {
+			log.info("Custom Resolver Is Not Provided, Use Default.");
+			customResolver = new DefaultCustomResolver();
 		}
-		this.databaseTraitResolver = databaseTraitResolver;
+		this.customResolver = customResolver;
 	}
 
 	/**
@@ -131,7 +131,7 @@ public class NewbieJdbcSupport implements NewbieJdbc {
 		try {
 			conn = getConnection();
             co.conn = conn;
-            co.databaseTraitResolver = databaseTraitResolver;
+            co.customResolver = customResolver;
 			return co.run();
 		} 
 		catch (SQLException e) {
@@ -172,7 +172,7 @@ public class NewbieJdbcSupport implements NewbieJdbc {
 			conn = getConnection();
 			conn.setAutoCommit(false);
             co.conn = conn;
-            co.databaseTraitResolver = databaseTraitResolver;
+            co.customResolver = customResolver;
 			T t = co.run();
 			conn.commit();
 			return t;
@@ -440,6 +440,6 @@ public class NewbieJdbcSupport implements NewbieJdbc {
 	}
 
 	private BasicJdbc bd(Connection conn) {
-		return new BasicJdbcSupport(conn, databaseTraitResolver);
+		return new BasicJdbcSupport(conn, customResolver);
 	}
 }

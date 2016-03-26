@@ -35,17 +35,17 @@ class BasicJdbcSupport implements BasicJdbc {
 	private static final Logger log = 
 		LoggerFactory.getLogger(BasicJdbcSupport.class);
 
-	protected Connection conn;
-	protected DatabaseTraitResolver databaseTraitResolver;
+	Connection conn;
+	CustomResolver customResolver;
 
 	/**
-	 * @param conn database connection
-	 * @param ppp pagination processor provider 
+	 * @param onn database connection
+	 * @param customResolver custom resolver
 	 */
 	public BasicJdbcSupport(Connection conn, 
-			DatabaseTraitResolver databaseTraitResolver) {
+			CustomResolver customResolver) {
 		this.conn = conn;
-		this.databaseTraitResolver = databaseTraitResolver;
+		this.customResolver = customResolver;
 	}
 	
 	/**
@@ -65,7 +65,7 @@ class BasicJdbcSupport implements BasicJdbc {
 						"List Values By SQL [{}] Expected One Column To Be Returned, " + 
 						"But Found More Than One", sql));
 				}
-				return (T) databaseTraitResolver.readValue(rs, 1);
+				return (T) customResolver.readValue(rs, 1);
 			}
 		}, sql, values);
 	}
@@ -82,7 +82,7 @@ class BasicJdbcSupport implements BasicJdbc {
 						"Find Value By SQL [{}] Expected One Column To Be Returned, " + 
 						"But Found More Than One", sql));
 				}
-				return (T) databaseTraitResolver.readValue(rs, 1);
+				return (T) customResolver.readValue(rs, 1);
 			}
 		}, sql, values);
 	}
@@ -235,7 +235,7 @@ class BasicJdbcSupport implements BasicJdbc {
 			String sql, Collection<Order> orders, 
 			int start, int limit, 
 			Object... args) {
-		SqlAndArgs sa = databaseTraitResolver.getPaginationProcessor(conn)
+		SqlAndArgs sa = customResolver.getPaginationProcessor(conn)
 				.process(orders, start, limit, sql, Arrays.asList(args));
 		return query(new Ro<List<Map<String, Object>>>() {
 			public List<Map<String, Object>> exec(ResultSet rs) 
@@ -332,7 +332,7 @@ class BasicJdbcSupport implements BasicJdbc {
 			// ignore row number
 			if (!PaginationProcessor.COLUMN_ROW_NUMBER
 					.equalsIgnoreCase(colName)) {
-				mapRtn.put(colName, databaseTraitResolver.readValue(rs, i));
+				mapRtn.put(colName, customResolver.readValue(rs, i));
 			}
 		}
 		return mapRtn;
@@ -357,7 +357,7 @@ class BasicJdbcSupport implements BasicJdbc {
 		if (values != null && !values.isEmpty()) {
 			int i = 0;
 			for (Object value : values) {
-				databaseTraitResolver.setParam(ps, ++i, value);
+				customResolver.setParam(ps, ++i, value);
 			}
 		}
 		return ps;
