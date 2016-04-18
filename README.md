@@ -132,7 +132,7 @@ jdbc.insert("users",
     args, 3);
 
 // update gender to F of user 102
-jdbc.update("update user set gender = ? where id = ?", "F", "102");
+jdbc.update("update users set gender = ? where id = ?", "F", "102");
 
 ```
 
