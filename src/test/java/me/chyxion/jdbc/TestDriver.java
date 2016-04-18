@@ -1,6 +1,8 @@
 package me.chyxion.jdbc;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -30,6 +32,9 @@ import com.alibaba.druid.pool.DruidDataSource;
  * Mar 26, 2016 4:11:23 PM
  */
 public class TestDriver {
+	private static final Logger log = 
+		LoggerFactory.getLogger(TestDriver.class);
+
 	DruidDataSource dataSource = null;
 	private NewbieJdbc jdbc = null;
 	{
@@ -76,62 +81,61 @@ public class TestDriver {
 			    users, 
 			    16);
 
-		List<String> names0 = jdbc.list(new Ro<String>() {
-			public String exec(ResultSet rs) throws SQLException {
-				return rs.getString("name");
-			}
-		}, "select name from demo_user");
-		jdbc.update("update user set gender = ? where id = ?", "F", "102");
-		// 
+			List<String> names = jdbc.list(new Ro<String>() {
+				public String exec(ResultSet rs) throws SQLException {
+					return rs.getString("name");
+				}
+			}, "select name from demo_user");
+			log.info("List Names [{}].", names);
+			jdbc.update("update user set gender = ? where id = ?", "F", "102");
 
-	Map<String, Object> u = jdbc.executeTransaction(new Co<Map<String, Object>>() {
-		@Override
-		protected Map<String, Object> run() throws SQLException {
-			update("delete users where id = ?", "104");
-			update("update users set age = ? where id = ?", 24, "103");
-			return findMap("select * from users where id = ?", 106);
-		}
-	});
+			Map<String, Object> user = jdbc.executeTransaction(new Co<Map<String, Object>>() {
+				@Override
+				protected Map<String, Object> run() throws SQLException {
+					update("delete users where id = ?", "104");
+					update("update users set age = ? where id = ?", 24, "103");
+					return findMap("select * from users where id = ?", 106);
+				}
+			});
+			log.info("User [{}].", user);
+			int count = jdbc.findValue("select count(1) from demo_user");
+			log.info("Count [{}].", count);
+			List<Map<String, Object>> usersPage = jdbc.listMapPage("select * from demo_user", 
+				Arrays.asList(new Order("name", Order.DESC)), 0, 1);
+			log.info("Users Page [{}].", usersPage);
 
-		// System.err.println(names);
-		System.err.println(jdbc.findValue("select count(1) from demo_user"));
-		System.err.println(
-			jdbc.listMapPage("select * from demo_user", 
-			Arrays.asList(new Order("name", Order.DESC)), 0, 1));
+			usersPage = jdbc.listMapPage("select * from users where gender = ?", 
+				Arrays.asList(new Order("date_created", Order.DESC)), 10, 16, "F");
+			log.info("Users Page [{}].", usersPage);
+			count = jdbc.findValue(
+				"select count(1) from users");
 
-		List<Map<String, Object>> uu = jdbc.listMapPage("select * from users where gender = ?", 
-			Arrays.asList(new Order("date_created", Order.DESC)), 10, 16, "F");
+			String name = jdbc.findValue(
+				"select name from users where id = ?", 
+					"2008110101");
+			log.info("Find Value [{}].", name);
+			names = jdbc.listValue(
+				"select name from users where id in (?)", 
+				"2008110101", 
+				"2008110102");
+			names = jdbc.listValue(
+				"select name from users where id in (?)", 
+				Arrays.asList("2008110101", "2008110102"));
 
-		int count = jdbc.findValue(
-			"select count(1) from users");
+			Map<String, Object> params = new HashMap<String, Object>();
+			params.put("id", Arrays.asList("2008110101", "2008110102"));
+			names = jdbc.listValue(
+				"select name from users where id in (:id)", params);
 
-		String name = jdbc.findValue(
+			List<Map<String, Object>> listUsers = jdbc.listMap(
+					"select id, name, gender from users where age = ?", 24);
+			String name1 = jdbc.query(new Ro<String>() {
+				public String exec(ResultSet rs) throws SQLException {
+					return rs.next() ? rs.getString(1) : null;
+				}
+			}, 
 			"select name from users where id = ?", 
-			2008110101);
-
-		List<String> names = jdbc.listValue(
-			"select name from users where id in (?)", 
-			"2008110101", 
-			"2008110102");
-		names = jdbc.listValue(
-			"select name from users where id in (?)", 
-			Arrays.asList("2008110101", "2008110102"));
-
-		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("id", Arrays.asList("2008110101", "2008110102"));
-		// params.put("id", new String[] {"2008110101", "2008110102"});
-		names = jdbc.listValue(
-			"select name from users where id in (:id)", params);
-
-		List<Map<String, Object>> listUsers = jdbc.listMap(
-			"select id, name, gender from users where age = ?", 24);
-		String name1 = jdbc.query(new Ro<String>() {
-			public String exec(ResultSet rs) throws SQLException {
-				return rs.next() ? rs.getString(1) : null;
-			}
-		}, 
-		"select name from users where id = ?", 
-		"101");
+			"101");
 
 		String[] idAndName = jdbc.findOne(new Ro<String[]>() {
 			public String[] exec(ResultSet rs) throws SQLException {
