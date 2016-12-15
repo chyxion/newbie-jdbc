@@ -1,7 +1,7 @@
 package me.chyxion.jdbc;
 
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 import java.sql.Connection;
 import java.util.Collection;
 
